@@ -1,0 +1,135 @@
+=== setup ===
+/home/class/Desktop/os2026-setup.sh
+/usr/bin/riscv64-linux-gnu-gcc
+/usr/bin/qemu-system-riscv64
+=== user.h ===
+25:int pause(int);
+=== UPROGS ===
+133:	$U/_sleep\
+134:	$U/_args\
+=== sleep.c ===
+#include "kernel/types.h"
+#include "user/user.h"
+
+int
+main(int argc, char *argv[])
+{
+  if(argc != 2){
+    fprintf(2, "usage: sleep <ticks>\n");
+    exit(1);
+  }
+
+  pause(atoi(argv[1]));
+  exit(0);
+}
+=== args.c ===
+#include "kernel/types.h"
+#include "user/user.h"
+
+int
+main(int argc, char *argv[])
+{
+  printf("argc = %d\n", argc);
+  for(int i = 0; i < argc; i++)
+    printf("argv[%d] = [%s]\n", i, argv[i]);
+  exit(0);
+}
+=== build ===
+=== bash shell comparison ===
+hello
+README
+      2       2       4
+one
+two
+bg
+README
+a.c
+args
+args_linux.c
+b.c
+f
+
+d:
+/home/class
+a b
+README
+a.c
+args
+args_linux.c
+b.c
+d
+f
+=== bash args ===
+argc = 4
+argv[0] = [/home/class/args]
+argv[1] = [one]
+argv[2] = [two]
+argv[3] = [three]
+argc = 5
+argv[0] = [/home/class/args]
+argv[1] = [a.c]
+argv[2] = [args_linux.c]
+argv[3] = [b.c]
+argv[4] = [x y]
+argc = 2
+argv[0] = [/home/class/args]
+argv[1] = [/home/class]
+argc = 2
+argv[0] = [/home/class/args]
+argv[1] = [single quoted]
+=== shell source ===
+499 user/sh.c
+8:#define EXEC  1
+9:#define REDIR 2
+10:#define PIPE  3
+11:#define LIST  4
+12:#define BACK  5
+14:#define MAXARGS 10
+75:  case EXEC:
+83:  case REDIR:
+93:  case LIST:
+101:  case PIPE:
+125:  case BACK:
+284:  case 0:
+286:  case '|':
+287:  case '(':
+288:  case ')':
+289:  case ';':
+290:  case '&':
+291:  case '<':
+294:  case '>':
+391:    case '<':
+394:    case '>':
+397:    case '+': // >>
+469:  case EXEC:
+475:  case REDIR:
+481:  case PIPE:
+487:  case LIST:
+493:  case BACK:
+170:        fprintf(2, "cannot cd %s\n", cmd + 3);
+=== shell special characters ===
+22:  char *argv[MAXARGS];
+23:  char *eargv[MAXARGS];
+28:  struct cmd *cmd;
+29:  char *file;
+30:  char *efile;
+37:  struct cmd *left;
+38:  struct cmd *right;
+43:  struct cmd *left;
+44:  struct cmd *right;
+49:  struct cmd *cmd;
+53:void panic(char *);
+54:struct cmd *parsecmd(char *);
+55:void runcmd(struct cmd *) __attribute__((noreturn));
+59:runcmd(struct cmd *cmd)
+62:  struct backcmd *bcmd;
+63:  struct execcmd *ecmd;
+64:  struct listcmd *lcmd;
+65:  struct pipecmd *pcmd;
+66:  struct redircmd *rcmd;
+76:    ecmd = (struct execcmd *)cmd;
+84:    rcmd = (struct redircmd *)cmd;
+94:    lcmd = (struct listcmd *)cmd;
+102:    pcmd = (struct pipecmd *)cmd;
+126:    bcmd = (struct backcmd *)cmd;
+135:getcmd(char *buf, int nbuf)

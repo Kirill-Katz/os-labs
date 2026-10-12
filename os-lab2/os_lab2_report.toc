@@ -1,0 +1,19 @@
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Objective}{1}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Tasks}{1}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Environment and Tools}{1}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Building and Booting xv6}{2}{section.2}%
+\contentsline {section}{\numberline {3}Using xv6 as a Unix System}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Built-in Programs}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Pipelines and Interprocess Communication}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Comparison with a Linux Shell}{4}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Reading the xv6 Source}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}User and Kernel Code}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}System Calls Used by cat}{5}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Locating sys read}{6}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Implementing the sleep User Program}{6}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Program Source}{6}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Adding the Program to the Build}{7}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Execution Test}{7}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Discussion}{7}{section.6}%
+\contentsline {section}{\numberline {7}Conclusion}{8}{section.7}%

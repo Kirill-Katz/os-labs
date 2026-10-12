@@ -1,0 +1,299 @@
+\documentclass[12pt]{article}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{codegray}{RGB}{245,245,245}
+\definecolor{rulegray}{RGB}{190,190,190}
+\definecolor{commentgreen}{RGB}{35,110,55}
+
+\setstretch{1.12}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+\setlist{itemsep=0.25em,topsep=0.35em}
+\renewcommand{\arraystretch}{1.25}
+\graphicspath{{resources/}}
+
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\bfseries,
+    commentstyle=\color{commentgreen}\itshape,
+    backgroundcolor=\color{codegray},
+    frame=single,
+    rulecolor=\color{rulegray},
+    breaklines=true,
+    showstringspaces=false,
+    columns=fullflexible,
+    keepspaces=true,
+    aboveskip=0.8em,
+    belowskip=0.8em
+}
+
+\newcommand{\commandname}[1]{\texttt{#1}}
+\newcommand{\labimage}[3][0.92\textwidth]{%
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=#1,height=0.72\textheight,keepaspectratio]{\detokenize{#2}}
+        \caption{#3}
+    \end{figure}
+}
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\begin{titlepage}
+    \centering
+
+    {\large Ministerul Educației și Cercetării al Republicii Moldova\par}
+    \vspace{0.45cm}
+    {\large Universitatea Tehnică a Moldovei\par}
+    \vspace{0.45cm}
+    {\large Facultatea Calculatoare, Informatică și Microelectronică\par}
+
+    \vspace{3cm}
+
+    {\Large\bfseries Laboratory Work 2\par}
+    \vspace{0.55cm}
+    {\LARGE\bfseries Building and Exploring the xv6 Operating System\par}
+    \vspace{0.35cm}
+    {\large Operating Systems\par}
+
+    \vfill
+
+    \begin{flushleft}
+        \textbf{Elaborated by:}\\
+        Student, group FAF-241\\
+        Caț Chiril
+
+        \vspace{1cm}
+
+        Verified:\\
+        asist. univ. Reițman Patricia
+    \end{flushleft}
+
+    \vfill
+
+    {Chișinău -- 2026\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+xv6 is a small teaching operating system that reimplements the central ideas of Unix Version~6 for the RISC-V architecture. Unlike a production operating system, xv6 is intentionally compact enough for its kernel, user programs, system-call interface, filesystem, memory manager, and scheduler to be studied directly. It runs under the QEMU machine emulator and provides a minimal Unix-like shell.
+
+This laboratory work moves from observing Linux externally to examining both sides of an operating-system interface. The user programs in \commandname{user/} request services, while the privileged code in \commandname{kernel/} implements those services. The practical work included compiling and booting xv6, using its standard programs, inspecting source code, and adding a new user-space program that invokes the existing \commandname{sleep} system call.
+
+\subsection{Objective}
+
+The objective is to build and boot xv6, become familiar with its Unix-like environment, identify the boundary between user and kernel code, trace system calls used by a program, and implement a working \commandname{sleep} command.
+
+\subsection{Tasks}
+
+The work was divided into four parts:
+
+\begin{enumerate}
+    \item compile xv6 and boot it in QEMU;
+    \item run built-in user programs and test a shell pipeline;
+    \item inspect \commandname{user/cat.c}, the system-call declarations, and the kernel implementation of \commandname{sys\_read};
+    \item implement \commandname{user/sleep.c}, add it to \commandname{UPROGS}, rebuild xv6, and test the result.
+\end{enumerate}
+
+\subsection{Environment and Tools}
+
+The experiment used the course Linux environment with the RISC-V cross-compiler and QEMU. The xv6 source tree was organized around the two directories summarized in Table~\ref{tab:tree}.
+
+\begin{table}[H]
+    \centering
+    \caption{Principal xv6 source directories}
+    \label{tab:tree}
+    \begin{tabular}{>{\ttfamily}p{0.20\textwidth} p{0.68\textwidth}}
+        \toprule
+        \normalfont\textbf{Directory} & \textbf{Role} \\
+        \midrule
+        kernel/ & Privileged operating-system code, including process scheduling, memory management, filesystem code, device handling, and system-call handlers. \\
+        user/ & Unprivileged programs and user-space support code, including the shell, \commandname{ls}, \commandname{cat}, and the new \commandname{sleep} program. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Building and Booting xv6}
+
+The source tree was compiled and started with:
+
+\begin{lstlisting}[language=bash]
+cd ~/xv6-riscv
+make qemu
+\end{lstlisting}
+
+The build creates the RISC-V kernel and xv6 user programs, then launches QEMU with the generated disk image. The successful boot sequence printed \commandname{xv6 kernel is booting}, started the available hardware threads (harts), launched the initial process, and displayed the xv6 shell prompt.
+
+\labimage[0.68\textwidth]{resources/xv6 kernle is booting.png}{Successful xv6 boot followed by the initial shell prompt}
+
+The lines \commandname{hart 1 starting} and \commandname{hart 2 starting} show secondary RISC-V processor cores entering the kernel. The message \commandname{init: starting sh} confirms that the first user-level initialization process launched the shell. Reaching the \commandname{\$} prompt verifies that the kernel, filesystem image, console device, init program, and shell all function together.
+
+QEMU is exited with its monitor escape sequence: press Ctrl-A, release it, and then press X. This sequence is handled by QEMU rather than by the xv6 shell.
+
+\section{Using xv6 as a Unix System}
+
+\subsection{Built-in Programs}
+
+The \commandname{cat README} command successfully opened the file, repeatedly read its contents, wrote them to standard output, and returned control to the shell.
+
+\labimage[0.70\textwidth]{resources/test commands by running cat README.png}{Reading the xv6 README file with the cat user program}
+
+The xv6 filesystem contains familiar Unix programs. The directory listing used during the laboratory included programs such as \commandname{grep}, \commandname{sh}, \commandname{rm}, and \commandname{cat}; any three of these satisfy the observation task. Their interfaces are intentionally similar to their Linux counterparts, although the implementations and supported options are much smaller.
+
+The README identifies xv6 as a modern RISC-V reimplementation of Unix Version~6 and describes the toolchain and QEMU requirement. More importantly for this experiment, the successful output demonstrates cooperation between the shell, the \commandname{cat} process, system calls, the xv6 filesystem, and the console driver.
+
+\subsection{Pipelines and Interprocess Communication}
+
+The pipeline \commandname{ls | grep sh} connects the standard output of \commandname{ls} to the standard input of \commandname{grep}. The result contains the directory entry for the xv6 shell.
+
+\labimage[0.68\textwidth]{resources/test ls | grep sh.png}{Using an xv6 pipeline to select the sh directory entry}
+
+Two operating-system capabilities are essential for this pipeline:
+
+\begin{enumerate}
+    \item \textbf{Process management:} the shell must create and coordinate separate \commandname{ls} and \commandname{grep} processes, normally using \commandname{fork}, \commandname{exec}, and \commandname{wait}.
+    \item \textbf{Kernel-supported interprocess communication:} the kernel must create a pipe with readable and writable file descriptors and transfer bytes safely from one process to the other.
+\end{enumerate}
+
+Standard input and output provide the conventional file descriptors that the shell redirects to the pipe endpoints. The pipe itself is the kernel object that buffers and transports the data.
+
+\subsection{Comparison with a Linux Shell}
+
+The xv6 shell follows the same core Unix model as a Linux shell: it launches programs, redirects file descriptors, constructs pipelines, and waits for child processes. It is considerably simpler, however, because it omits most interactive conveniences and language features of shells such as Bash, including command history, completion, job control, extensive expansion rules, scripting constructs, and configurable prompts.
+
+\section{Reading the xv6 Source}
+
+\subsection{User and Kernel Code}
+
+Code in \commandname{user/} runs without kernel privileges and accesses protected resources only through system calls. Code in \commandname{kernel/} runs in supervisor mode, controls the hardware, manages address spaces and processes, and validates and serves system-call requests. On RISC-V, this distinction is more accurately described as user mode and supervisor mode rather than the x86-specific terms ring~3 and ring~0.
+
+The boundary protects the whole system: a user program cannot directly manipulate page tables, devices, or another process's memory. Instead, it places arguments according to the xv6 calling convention and executes a trap into the kernel. The kernel validates the request, performs the operation, and returns a result.
+
+\subsection{System Calls Used by cat}
+
+The program \commandname{user/cat.c} uses the following system calls:
+
+\begin{table}[H]
+    \centering
+    \caption{System calls used by the xv6 cat program}
+    \begin{tabular}{>{\ttfamily}p{0.18\textwidth} p{0.70\textwidth}}
+        \toprule
+        \normalfont\textbf{Call} & \textbf{Request made to the kernel} \\
+        \midrule
+        open & Open a named file and return a file descriptor. \\
+        read & Copy bytes from a file descriptor into a user-space buffer. \\
+        write & Copy bytes from a user-space buffer to a file descriptor, including standard output. \\
+        close & Release an open file descriptor. \\
+        exit & Terminate the process and provide an exit status. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The program also calls \commandname{fprintf} to format error messages. \commandname{fprintf} is a user-space library routine, not a direct system call; it ultimately emits the formatted bytes through \commandname{write}. File descriptor~1 is standard output and file descriptor~2 is standard error. Reading continues until \commandname{read} returns zero for end of file or a negative value for an error.
+
+A simplified outline of the important control flow is:
+
+\begin{lstlisting}
+while ((n = read(fd, buf, sizeof(buf))) > 0) {
+    if (write(1, buf, n) != n) {
+        fprintf(2, "cat: write error\n");
+        exit(1);
+    }
+}
+\end{lstlisting}
+
+\subsection{Locating sys read}
+
+The declarations visible to user programs are listed in \commandname{user/user.h}. The kernel-side handler \commandname{sys\_read} was located in \commandname{kernel/sysfile.c} at line~69 in the inspected source tree. Its responsibility is to retrieve and validate the system-call arguments before delegating the actual file read to the kernel's file layer.
+
+This tracing exercise shows both sides of the interface: \commandname{user/cat.c} calls \commandname{read}, the system-call mechanism transfers control into the kernel, and \commandname{sys\_read} handles the privileged operation.
+
+\section{Implementing the sleep User Program}
+
+\subsection{Program Source}
+
+The new \commandname{user/sleep.c} program accepts exactly one argument, converts it from text to an integer number of clock ticks, invokes the existing \commandname{sleep} system call, and exits successfully after the delay.
+
+\begin{lstlisting}[caption={Implementation of user/sleep.c}]
+#include "kernel/types.h"
+#include "user/user.h"
+
+int
+main(int argc, char *argv[])
+{
+    if (argc != 2) {
+        fprintf(2, "usage: sleep <ticks>\n");
+        exit(1);
+    }
+
+    sleep(atoi(argv[1]));
+    exit(0);
+}
+\end{lstlisting}
+
+The argument check prevents access to a missing \commandname{argv[1]} and gives the user a clear usage message. \commandname{atoi} converts the decimal argument, and the system call blocks the process for the requested number of xv6 timer ticks. While the process sleeps, the scheduler can run other processes.
+
+\newpage
+\subsection{Adding the Program to the Build}
+
+xv6 user programs must be included in the \commandname{UPROGS} list in the Makefile so that they are compiled and copied into the filesystem image. The following entry was added with the same tab indentation and trailing backslash as the neighboring entries:
+
+\begin{lstlisting}[language=make]
+UPROGS=\
+    $U/_cat\
+    $U/_echo\
+    $U/_sleep\
+    ...
+\end{lstlisting}
+
+The underscore is part of the build target name used by the xv6 Makefile; inside xv6 the resulting command is invoked simply as \commandname{sleep}.
+
+\subsection{Execution Test}
+
+After rebuilding and booting xv6, the command \commandname{sleep 100} paused for the requested interval and then returned to the shell prompt without printing an error.
+
+\labimage[0.62\textwidth]{resources/run implemented sleep 100 userspace process.png}{Running the implemented sleep command for 100 clock ticks}
+
+This behavior verifies that the program was compiled, included in the filesystem image, loaded as a user process, and able to invoke the kernel's \commandname{sleep} service. A complete negative test is \commandname{sleep} without an argument; it should print \commandname{usage: sleep <ticks>} to file descriptor~2 and terminate with status~1.
+
+\section{Discussion}
+
+The experiment connected several operating-system concepts that are often studied separately:
+
+\begin{itemize}
+    \item \textbf{Boot and initialization:} QEMU provides emulated RISC-V hardware, the xv6 kernel initializes it, and \commandname{init} starts the first shell.
+    \item \textbf{Processes and pipes:} the shell creates programs as separate processes and connects them with kernel-managed file descriptors.
+    \item \textbf{Protection boundary:} user programs execute without privilege, while the kernel validates and fulfills system-call requests in supervisor mode.
+    \item \textbf{Program integration:} adding \commandname{sleep.c} requires both correct source code and a Makefile entry so the executable becomes part of the xv6 filesystem image.
+\end{itemize}
+
+The \commandname{cat} and \commandname{sleep} examples reveal the same general pattern. Each user program performs a small amount of application logic and depends on system calls for protected operations. \commandname{cat} requests file and console I/O, while \commandname{sleep} requests timer-based blocking. The kernel provides the mechanism; the user program determines how it is used.
+
+\section{Conclusion}
+
+The laboratory work successfully built and booted xv6 under QEMU, exercised its shell and standard user programs, verified that pipelines provide communication between processes, examined the separation between \commandname{user/} and \commandname{kernel/}, and traced the system calls used by \commandname{cat}. The source inspection showed that \commandname{sys\_read} is implemented in \commandname{kernel/sysfile.c} and clarified that \commandname{fprintf} is a library routine built on top of the system-call interface.
+
+The new \commandname{sleep} program validated the complete path from user code to kernel service. It checked its arguments, converted the requested delay, invoked the existing system call, and ran successfully after being added to \commandname{UPROGS}. This provides a practical foundation for later work that modifies not only xv6 user programs but also the kernel itself.
+
+\end{document}

@@ -1,0 +1,138 @@
+=== environment ===
+class
+workdir=/home/class/os-lab5/run.nmVOtn
+2026-10-12T16:15:43+03:00
+=== part 1: paths and types ===
+bin
+boot
+cdrom
+dev
+etc
+home
+lib
+lost+found
+media
+mnt
+opt
+proc
+root
+run
+sbin
+snap
+srv
+swap.img
+sys
+tmp
+usr
+var
+lrwxrwxrwx   1 root root     7 Apr 20 11:46 /bin -> usr/bin
+crw-rw-rw-   1 root root  1, 3 Oct 12 16:11 /dev/null
+drwxr-xr-x 142 root root 12288 Oct 12 16:11 /etc
+-rw-r--r--   1 root root  2769 Oct  5 15:58 /etc/passwd
+drwxrwxrwt  16 root root   380 Oct 12 16:15 /tmp
+total 0
+crw-r--r--  1 root  root     10, 235 Oct 12 16:11 autofs
+drwxr-xr-x  2 root  root        360 Oct 12 16:11 block
+drwxr-xr-x  2 root  root         60 Oct 12 16:11 bsg
+crw-------  1 root  root     10, 234 Oct 12 16:11 btrfs-control
+drwxr-xr-x  3 root  root         60 Jan  1  1970 bus
+lrwxrwxrwx+ 1 root  root          3 Oct 12 16:11 cdrom -> sr0
+drwxr-xr-x  2 root  root       3760 Oct 12 16:11 char
+crw-------  1 root  tty       5,   1 Oct 12 16:11 console
+lrwxrwxrwx  1 root  root         11 Oct 12 16:11 core -> /proc/kcore
+ls: cannot access '/dev/sda': No such file or directory
+crw-rw-rw- 1 root root   1, 3 Oct 12 16:11 /dev/null
+brw-rw---- 1 root disk 253, 0 Oct 12 16:11 /dev/vda
+/usr/bin/ls: symbolic link to ../lib/cargo/bin/coreutils/ls
+/etc/passwd: ASCII text
+/bin:        symbolic link to usr/bin
+33M	/var/log
+5.7G	/usr
+=== part 2: inodes and links ===
+  File: notes.txt
+  size: 6         	Blocks: 8          IO Block: 4096   regular file
+Device: 253,2	Inode: 1056330     Links: 1
+Access: (0664/-rw-rw-r--)  Uid: ( 1000/   class)   Gid: ( 1000/   class)
+Access: 2026-10-12 16:15:48.048756376 +0300
+Modify: 2026-10-12 16:15:48.048756376 +0300
+Change: 2026-10-12 16:15:48.048756376 +0300
+ Birth: 2026-10-12 16:15:48.048756376 +0300
+1056330 -rw-rw-r-- 1 class class 6 Oct 12 16:15 notes.txt
+1056330 -rw-rw-r-- 2 class class 6 Oct 12 16:15 hard.txt
+1056330 -rw-rw-r-- 2 class class 6 Oct 12 16:15 notes.txt
+hello
+1056330 -rw-rw-r-- 1 class class 6 Oct 12 16:15 hard.txt
+1056330 -rw-rw-r-- 1 class class 6 Oct 12 16:15 hard.txt
+1061575 lrwxrwxrwx 1 class class 8 Oct 12 16:15 soft.txt -> hard.txt
+hello
+cat: soft.txt: No such file or directory
+lrwxrwxrwx 1 class class 8 Oct 12 16:15 soft.txt -> hard.txt
+  File: 'soft.txt' -> 'hard.txt'
+  size: 8         	Blocks: 0          IO Block: 4096   symbolic link
+Device: 253,2	Inode: 1061575     Links: 1
+Access: (0777/lrwxrwxrwx)  Uid: ( 1000/   class)   Gid: ( 1000/   class)
+Access: 2026-10-12 16:15:48.090756768 +0300
+Modify: 2026-10-12 16:15:48.087756740 +0300
+Change: 2026-10-12 16:15:48.087756740 +0300
+ Birth: 2026-10-12 16:15:48.087756740 +0300
+drwxrwxr-x 2 class class 4096 Oct 12 16:15 d
+drwxrwxr-x 4 class class 4096 Oct 12 16:15 d
+-rw-rw-r-- 1 class class 2 Oct 12 16:15 one.txt
+4.0K	one.txt
+-rw-rw-r-- 1 class class 1.0G Oct 12 16:15 big.img
+0	big.img
+=== part 3: permissions ===
+-rw------- 1 class class 7 Oct 12 16:15 s.txt
+---------- 1 class class 7 Oct 12 16:15 s.txt
+cat: s.txt: Permission denied
+secret
+0002
+-rw-rw-r-- 1 class class    0 Oct 12 16:15 new.txt
+drwxrwxr-x 2 class class 4096 Oct 12 16:15 newdir
+dr-------- 2 class class 4096 Oct 12 16:15 box
+f
+cat: box/f: Permission denied
+d--x------ 2 class class 4096 Oct 12 16:15 box
+ls: cannot open directory 'box': Permission denied
+hi
+-rwsr-xr-x 1 root root 142552 Feb  2  2026 /usr/bin/passwd
+drwxrwxrwt 16 root root 380 Oct 12 16:15 /tmp
+cat: /etc/shadow: Permission denied
+-rw-r----- 1 root shadow 1311 Oct  5 16:10 /etc/shadow
+=== part 4: disks and proc ===
+NAME     SIZE TYPE FSTYPE   MOUNTPOINTS
+loop0   61.9M loop squashfs /snap/core24/1644
+loop1      4K loop squashfs /snap/bare/5
+loop2   19.9M loop squashfs /snap/desktop-security-center/152
+loop3  247.5M loop squashfs /snap/firefox/8762
+loop4  552.9M loop squashfs /snap/gnome-46-2404/154
+loop5   91.7M loop squashfs /snap/gtk-common-themes/1535
+loop6  188.2M loop squashfs /snap/mesa-2404/1836
+loop7   17.5M loop squashfs /snap/prompting-client/221
+loop8   10.9M loop squashfs /snap/snap-store/1391
+loop9   43.4M loop squashfs /snap/snapd/27709
+loop10   804K loop squashfs /snap/snapd-desktop-integration/396
+sr0      3.9G rom  iso9660  /run/media/class/Ubuntu 26.04.1 LTS arm64
+vda       64G disk          
+├─vda1     1G part vfat     /boot/efi
+└─vda2  62.9G part ext4     /
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda2        62G   12G   48G  20% /
+/dev/vda2 on / type ext4 (rw,relatime)
+/dev/vda2 ext4 /
+6
+MemTotal:        3461284 kB
+MemTotal:        3461284 kB
+MemFree:          429084 kB
+MemAvailable:    1217764 kB
+Name:	head
+Umask:	0002
+State:	R (running)
+Tgid:	4301
+Ngid:	0
+total 0
+lrwx------ 1 class class 64 Oct 12 16:15 0 -> /dev/pts/0
+l-wx------ 1 class class 64 Oct 12 16:15 1 -> pipe:[30151]
+l-wx------ 1 class class 64 Oct 12 16:15 2 -> pipe:[30151]
+lr-x------ 1 class class 64 Oct 12 16:15 3 -> /proc/4302/fd
+=== done ===

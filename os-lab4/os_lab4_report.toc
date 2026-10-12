@@ -1,0 +1,7 @@
+\contentsline {section}{Purpose of the Work}{1}{section*.2}%
+\contentsline {section}{Environment check}{1}{section*.3}%
+\contentsline {section}{\numberline {1}Part 1: Updating the xv6 sleep program}{1}{section.1}%
+\contentsline {section}{\numberline {2}Part 2: Bash and xv6 shell comparison}{3}{section.2}%
+\contentsline {section}{\numberline {3}Part 3: Who expands arguments?}{6}{section.3}%
+\contentsline {section}{\numberline {4}Part 4: Reading \texttt {user/sh.c}}{7}{section.4}%
+\contentsline {section}{Conclusions}{8}{section*.4}%
