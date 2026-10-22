@@ -26,7 +26,7 @@ gcc -Wall -Wextra -o args args_linux.c
   echo '=== bash shell comparison ==='
   mkdir -p /home/class/shtest
   cd /home/class/shtest
-  touch README
+  touch README a.c b.c
   echo hello > f ; cat < f
   ls | grep READ
   (echo a; echo b) | wc
