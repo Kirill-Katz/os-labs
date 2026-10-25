@@ -1,0 +1,176 @@
+\documentclass[12pt]{article}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\DeclareCaptionLabelSeparator{labdash}{ -- }
+\captionsetup[figure]{labelsep=labdash}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{chngcntr}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{codegray}{RGB}{245,245,245}
+\definecolor{rulegray}{RGB}{190,190,190}
+\setstretch{1.12}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+\setlist{itemsep=0.25em,topsep=0.35em}
+\renewcommand{\arraystretch}{1.2}
+\graphicspath{{resources/}}
+\counterwithin{figure}{section}
+\lstset{language=bash,basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,rulecolor=\color{rulegray},breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true,aboveskip=0.8em,belowskip=0.8em}
+\newcommand{\cmd}[1]{\texttt{#1}}
+\newcommand{\labimage}[3][0.88\textwidth]{\begin{figure}[H]\centering\includegraphics[width=#1,height=0.68\textheight,keepaspectratio]{\detokenize{#2}}\caption{#3}\end{figure}}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educației și Cercetării al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnică a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatică și Microelectronică\par}
+    \vspace{0.45cm}
+    {\large Departamentul Ingineria Software și Automatică\par}
+\vspace{3cm}
+{\Large\bfseries Laboratory Work 3\par}
+\vspace{0.55cm}
+{\LARGE\bfseries The Command Line: Shell, Pipes and Text Filters\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Caț Chiril\\
+\vspace{1cm}
+\textbf{Checked by:}\\
+asist. univ. Reițman Patricia
+\end{flushleft}
+\vfill
+{Chișinău -- 2026\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+The shell interprets a command line before starting a program. It completes paths, expands patterns and variables, applies quoting and redirections, starts processes, and connects them through pipes. This laboratory examines those steps in Bash and uses small text filters to answer questions about a generated access log.
+
+\subsection*{Objective}
+\addcontentsline{toc}{subsection}{Objective}
+The objective is to navigate efficiently in Bash, predict shell expansion, control standard input and output, combine commands, and write executable scripts that summarize structured text.
+
+\subsection*{Environment and evidence}
+\addcontentsline{toc}{subsection}{Environment and evidence}
+The supplied terminal captures show a Linux virtual machine with user \cmd{class}. They document the data setup and Part~1 observations. The generated access log follows the exact loop in the lab instructions, so its numerical results can be reproduced. Later command behavior is explained from Bash syntax and the scripts accompanying this report; machine-dependent outputs are left as such rather than attributed to an unseen VM session.
+
+\section{Move Fast and Find Help}
+Tab completed \cmd{ls /usr/sh} to the unique directory prefix \cmd{/usr/share/}, as shown in Figure~\ref{fig:tab}. When several names match, two Tab presses list possible completions. Bash completion saves typing and reduces mistakes in long paths.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.82\textwidth]{\detokenize{resources/ls :usr:sh before tab.png}}\\[0.3em]
+\includegraphics[width=0.82\textwidth]{\detokenize{resources/ls :usr:share after tab pressed.png}}
+\caption{Tab completion of a directory path}\label{fig:tab}\end{figure}
+
+The reverse search shortcut \cmd{Ctrl+R} searched command history for \cmd{whoami}. Enter would execute the matching history entry; editing the line first is also possible.
+\labimage[0.75\textwidth]{resources/control + r finder.png}{Reverse search finding an earlier command}
+
+The \cmd{type} command identifies \cmd{cd} and \cmd{echo} as Bash built-ins. In this VM, \cmd{ls} is an alias for \cmd{ls --color=auto}; \cmd{which ls} finds its external executable at \cmd{/usr/bin/ls}. The shell must execute \cmd{cd} itself because changing the working directory of a child process would not change the parent shell's directory.
+\labimage[0.86\textwidth]{resources/type and which outputs.png}{The type and which commands identify built-ins, an alias, and the ls executable}
+
+The captured \cmd{PATH} contains ten entries, including a repeated \cmd{/snap/bin}; the number of distinct directories is therefore nine. Bash searches these entries in order, and \cmd{/usr/bin} contains \cmd{ls}. A missing command returned status~127. For help, \cmd{man ls} and \cmd{ls --help} show that \cmd{-t} sorts by modification time; \cmd{help cd} explains the built-in command. The command \cmd{man -k "list directory"} searches manual-page descriptions.
+\labimage[0.86\textwidth]{resources/output of directores in PATH.png}{The ten PATH entries in the Linux virtual machine}
+\labimage[0.83\textwidth]{resources/exit code of a missing program.png}{A missing program returning exit code 127}
+
+\section{Shell Expansion and Quoting}
+The test directory contains \cmd{a.c}, \cmd{b.c}, \cmd{file1.txt}, \cmd{file2.txt}, \cmd{notes.txt}, and \cmd{alfa beta.txt}. Table~\ref{tab:expansion} records the predicted behavior and reproducible Bash result. For environment-dependent expansions, the table gives the output form rather than an invented path or user name.
+
+\begin{longtable}{p{0.27\textwidth}p{0.31\textwidth}p{0.31\textwidth}}
+\caption{Predictions and Bash results for shell expansion}\label{tab:expansion}\\
+\toprule\textbf{Command} & \textbf{Prediction} & \textbf{Result and explanation}\\\midrule\endfirsthead
+\toprule\textbf{Command} & \textbf{Prediction} & \textbf{Result and explanation}\\\midrule\endhead
+\cmd{echo *.c} & C source names & \cmd{a.c b.c}; Bash expands the glob before \cmd{echo}.\\
+\cmd{echo file?.txt} & Both numbered files & \cmd{file1.txt file2.txt}; \cmd{?} matches one character.\\
+\cmd{echo [a-b]*} & Names beginning a or b & \cmd{a.c alfa beta.txt b.c}; the name with a space remains one argument.\\
+\cmd{echo *.xyz} & Literal pattern & \cmd{*.xyz}; unmatched globs remain unchanged in default Bash.\\
+\cmd{ls alfa beta.txt} & Two lookup errors & Bash passes two names; neither \cmd{alfa} nor \cmd{beta.txt} exists.\\
+\cmd{ls "alfa beta.txt"} & The one matching file & Bash passes the complete name as one argument.\\
+\cmd{echo '\$HOME' "\$HOME" \textbackslash\$HOME} & Literal, value, literal & First and third tokens are \cmd{\$HOME}; the middle token is the home path.\\
+\cmd{echo \{1..5\}; echo \$((7 * 6))} & A sequence and arithmetic & \cmd{1 2 3 4 5}, then \cmd{42}.\\
+\cmd{echo "today is \$(date +\%A), I am \$(whoami)"} & Day and user & The weekday and login name are substituted; they depend on execution time and user.\\
+\cmd{touch log\{1..3\}.txt \&\& ls log*} & Three log names & \cmd{log1.txt log2.txt log3.txt}; the listing runs if \cmd{touch} succeeds.\\
+\bottomrule
+\end{longtable}
+
+The \cmd{echo} program does not search the directory: Bash performs pathname expansion before calling it. \cmd{ls alfa beta.txt} can be fixed with either \cmd{ls "alfa beta.txt"} or \cmd{ls alfa\textbackslash\ beta.txt}. Single quotes preserve characters literally; double quotes allow variable and command substitution but preserve spaces within one argument. If \cmd{ls} prints \cmd{'alfa beta.txt'}, those visible quotes are its display convention for an unusual filename; they are not part of the filename.
+
+\section{Redirection, Chaining and Jobs}
+Standard output is file descriptor~1 and standard error is file descriptor~2. With \cmd{ls /etc /nope > out.txt 2> err.txt}, the valid directory listing goes to \cmd{out.txt} while the missing-path error goes to \cmd{err.txt}. Thus \cmd{wc -l out.txt} counts listing lines and \cmd{cat err.txt} shows the error.
+
+The order of redirections matters. In \cmd{> all.txt 2>\&1}, Bash first points stdout at the file and then duplicates that destination for stderr, so both streams enter the file. In \cmd{2>\&1 > all.txt}, stderr is first duplicated from the original stdout, usually the terminal; stdout is then changed to the file. The error stays on the terminal while the listing enters \cmd{all.txt}.
+
+The two writes \cmd{echo first > notes.md} and \cmd{echo second >> notes.md} leave the file with two lines, because \cmd{>} truncates and \cmd{>>} appends. The command \cmd{wc -l < access.log} prints only \cmd{500}, while \cmd{wc -l access.log} prints \cmd{500 access.log}: in the first case \cmd{wc} receives bytes on stdin and no filename argument.
+
+The separator \cmd{;} runs the next command regardless of status. The operator \cmd{\&\&} runs it only if the preceding command succeeded, and \cmd{||} runs it only if the preceding command failed. For example, \cmd{ls /nope 2> /dev/null || echo "failed with code \$?"} prints the failure status from \cmd{ls}. Finally, \cmd{sleep 100 \&} starts a background job; \cmd{jobs} lists it and \cmd{kill \%1} sends a termination signal to job~1. The precise job-status text depends on timing.
+
+\section{Questions Answered with Text Filters}
+The provided generator writes exactly 500 rows with fields \emph{date}, \emph{time}, \emph{user}, \emph{result}, and \emph{page}. The terminal capture confirms the row count.
+\labimage[0.70\textwidth]{resources/wc -l access.png}{The generated access log contains 500 requests}
+
+The companion \cmd{oneliners.sh} contains one command line for each question. Table~\ref{tab:results} summarizes the deterministic answers; question~7 depends on the machine's \cmd{/etc/passwd} and is printed by the script when it runs in the VM.
+
+\begin{table}[H]\centering\small
+\caption{Answers derived from the generated access log}\label{tab:results}
+\begin{tabular}{p{0.07\textwidth}p{0.80\textwidth}}\toprule
+\textbf{Q} & \textbf{Answer}\\\midrule
+1 & 100 failed requests.\\
+2 & Four pages: \cmd{/page0}, \cmd{/page1}, \cmd{/page2}, \cmd{/page3}.\\
+3 & Each page received 125 requests; the counts sum to 500.\\
+4 & \cmd{user3} and \cmd{user5} tie for the most failures, with 15 each.\\
+5 & \cmd{user3} made 72 requests, 15 of which failed.\\
+6 & The last three failed requests are \cmd{10:10 user0}, \cmd{10:15 user5}, and \cmd{10:20 user3}.\\
+7 & The login-shell counts are environment-specific; the script extracts field~7 of active \cmd{/etc/passwd} records and counts equal paths.\\
+8 & On the intended GNU/Linux system, \cmd{ls -l /etc} has one extra \cmd{total} header line; \cmd{ls /etc} does not.\\
+\bottomrule\end{tabular}\end{table}
+
+For Q8, the predicted difference is one line: the long listing's \cmd{total} header. Piping \cmd{ls} makes ordinary output one entry per line, so \cmd{wc -l} can count it. This explanation assumes \cmd{/etc} is a directory as in the course Linux VM. The optional regular-expression query for failed requests at minutes ending in zero yields 50 rows, because every tenth generated request fails and its minute is a multiple of ten.
+
+\section{The Report Script}
+The accompanying \cmd{report.sh} accepts a log path, rejects a missing file, summarizes all requests and failures, and loops over \cmd{user0} through \cmd{user6}. With the generated dataset, its output is:
+
+\begin{lstlisting}
+500 requests, 100 failed
+user0: 14 failures
+user1: 14 failures
+user2: 14 failures
+user3: 15 failures
+user4: 14 failures
+user5: 15 failures
+user6: 14 failures
+\end{lstlisting}
+
+The user counts add up to 100. Running \cmd{./report.sh nope.log} writes \cmd{no such file: nope.log} to stderr and exits with status~1. The first line, \cmd{\#!/bin/bash}, tells the operating system to invoke Bash when the file is executed directly. Before \cmd{chmod +x report.sh}, \cmd{./report.sh} fails with a permission error, though \cmd{bash report.sh} can still read it. The \cmd{./} prefix specifies the file in the current directory, which is normally absent from \cmd{PATH}. Writing errors with \cmd{>\&2} separates them from ordinary output, and \cmd{exit 1} makes failure observable to callers.
+
+\section{Discussion}
+The shell, rather than individual programs, performs completion, history lookup, globbing, quoting, substitutions, and redirection setup. Programs such as \cmd{echo}, \cmd{ls}, \cmd{grep}, and \cmd{wc} then receive already-prepared arguments or streams. The access-log exercise illustrates why pipelines work well for text data: each command performs one small transformation, and the counts can be checked against the generator's 500 rows.
+
+The available screenshots document setup and Part~1. The Part~2--5 explanations and script results are reproducible, but terminal screenshots for those sections were not supplied. The contents of \cmd{/etc/passwd}, the exact \cmd{/etc} listing count, and job-control messages should be captured from the course VM if those figures are required for submission.
+
+\section{Conclusion}
+This work demonstrated how Bash interprets a command line, locates commands, expands patterns, controls file descriptors, and connects simple filters. The generated log contained 500 requests and 100 failures; all page counts and per-user failure counts reconcile with those totals. The two executable scripts preserve the one-line answers and extend them into a reusable report with explicit error handling.
+
+\end{document}
