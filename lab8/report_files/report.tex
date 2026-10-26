@@ -4,6 +4,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{array}
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage[hidelinks]{hyperref}
@@ -44,18 +46,78 @@
 \clearpage
 \pagenumbering{arabic}
 
-\section{Purpose and environment}
-I ran process creation, program replacement, and two-way communication
-inside xv6. I added \texttt{user/run.c} and \texttt{user/pingpong.c} to the
-integrated \texttt{os/xv6-riscv} tree and its \texttt{UPROGS} list, then
-built the image and booted it with QEMU on 26 October 2026. Matching code
-copies are in \texttt{lab8/code/}. The required \texttt{notes.md} records
-the Observe answers and command output. The optional \texttt{primes}
-exercise was not part of the required deliverable.
+\section{Aim, deliverables, and build}
+This lab repeats the process experiment from Lab 7 inside xv6 and then
+uses two pipes to exchange a byte between a parent and a child. The aim is
+to connect the shell-level behavior observed in Lab 7 to the smaller xv6
+system-call interface: \texttt{fork} creates a child, \texttt{exec}
+replaces its program, \texttt{wait} reaps it, and \texttt{read}/\texttt{write}
+move bytes through pipes.
 
-\section{Fork, exec, and wait inside xv6}
-The final \texttt{run.c} prints its PID, forks, executes \texttt{echo} in
-the child, and waits for the child's status in the parent:
+I added \texttt{user/run.c} and \texttt{user/pingpong.c} to the integrated
+\texttt{os/xv6-riscv} tree. Both names were added to the Makefile's
+\texttt{UPROGS} list, so \texttt{mkfs} includes their binaries in
+\texttt{fs.img}. Matching source files and the Makefile are in
+\texttt{lab8/code/}; this report's source is in
+\texttt{lab8/report\_files/}. I used the local RISC-V compiler and QEMU
+on 26 October 2026. The relevant build and launch commands were:
+
+\begin{lstlisting}
+$ make clean
+$ make fs.img
+... user/run.c ... user/pingpong.c ...
+nmeta 47 (boot, super, log blocks 31, inode blocks 13,
+          bitmap blocks 1) blocks 1953 total 2000
+$ make qemu
+xv6 kernel is booting
+init: starting sh
+$
+\end{lstlisting}
+
+The compiler completed with xv6's \texttt{-Wall -Werror} settings. For
+the requested \texttt{ls} and nonexistent-program experiments, I
+temporarily changed \texttt{user/run.c}, rebuilt the user binary and disk
+image, and booted QEMU again. I restored the submitted \texttt{echo}
+version and forced a final rebuild of both \texttt{run} and
+\texttt{fs.img}. A final boot verified the restored image.
+
+The artifacts serve different purposes. The two C files are the actual
+xv6 user programs. The Makefile is needed to place their binaries in the
+image; copying a C file into \texttt{user/} alone would not make it
+available at the xv6 shell. The \texttt{notes.md} file preserves the
+short Observe answers, while this report explains the call sequence and
+the evidence in more detail. Each QEMU run began from the shell prompt
+shown in the transcripts. The PIDs are from those particular boots and
+are observations, not fixed values required by the programs.
+
+\clearpage
+\section{Part 1: a program starts another program}
+\subsection{How the process moves through the three calls}
+The final \texttt{run.c} first prints the parent's PID. The return value
+of \texttt{fork()} distinguishes the two paths: zero in the child and
+the child's PID in the parent. The child builds an argument vector ending
+in a null pointer and executes \texttt{echo}. The parent calls
+\texttt{wait(\&status)} and prints the status after the child has ended.
+The core of the implementation is:
+
+\begin{lstlisting}[language=C]
+int pid = fork();
+if(pid == 0){
+  char *args[] = { "echo", "hello", "from", "the", "child", 0 };
+  exec("echo", args);
+  printf("exec failed\n");
+  exit(1);
+}
+int status;
+wait(&status);
+printf("parent: child %d ended with status %d\n", pid, status);
+\end{lstlisting}
+
+Successful \texttt{exec} replaces the child process's address space. It
+does not create a second child and does not return to the error print in
+\texttt{run.c}. The child keeps its PID while the new \texttt{echo}
+program writes the supplied words. The parent remains blocked in
+\texttt{wait} until that program exits.
 
 \begin{lstlisting}
 $ run
@@ -65,24 +127,62 @@ hello from the child
 parent: child 4 ended with status 0
 \end{lstlisting}
 
-I also compiled and ran two temporary variations. With
-\texttt{exec("ls", args)}, the child printed the xv6 directory listing
-and exited successfully:
+The observed PID 4 is the child created by PID 3. The words
+\texttt{hello from the child} come from \texttt{echo}, not from a print
+statement in \texttt{run.c}. The child's successful exit produced status
+0, which the parent reported after \texttt{wait} returned.
 
-\begin{lstlisting}
+\clearpage
+\subsection{Changing the program to ls}
+I replaced only the child's argument vector and \texttt{exec} call with
+\texttt{char *args[] = \{ "ls", 0 \};} and
+\texttt{exec("ls", args);}. The next boot ran \texttt{ls} in the same
+child process. Its output included the new lab programs, confirming they
+were present in the rebuilt file system image. The complete directory
+listing from that run was:
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
 $ run
 parent: my pid is 3
 child: my pid is 4
 .              1 1 1024
 ..             1 1 1024
 README         2 2 2441
-... (other directory entries)
+sleep          2 3 35824
+args           2 4 35824
+mystat         2 5 37008
+find           2 6 39064
+run            2 7 36496
+pingpong       2 8 37672
+cat            2 9 37344
+echo           2 10 36160
+forktest       2 11 17864
+grep           2 12 40856
+init           2 13 36504
+kill           2 14 36064
+ln             2 15 35864
+ls             2 16 39400
+mkdir          2 17 36120
+rm             2 18 36104
+sh             2 19 59680
+stressfs       2 20 36944
+usertests      2 21 204344
+grind          2 22 51976
+wc             2 23 38344
+zombie         2 24 35400
+logstress      2 25 38112
+forphan        2 26 36864
+dorphan        2 27 36320
+sync           2 28 35496
 console        3 29 0
 parent: child 4 ended with status 0
 \end{lstlisting}
 
-With \texttt{exec("nosuchprog", args)}, replacement failed, so the child
-continued at the following error line:
+\subsection{A failed exec and its exit status}
+For the third run, the child attempted
+\texttt{exec("nosuchprog", args)}. There was no matching executable in
+the image, so \texttt{exec} returned to \texttt{run.c}. The error print
+and \texttt{exit(1)} then executed:
 
 \begin{lstlisting}
 $ run
@@ -92,21 +192,97 @@ exec failed
 parent: child 4 ended with status 1
 \end{lstlisting}
 
-The xv6 program uses \texttt{fork}, \texttt{exec}, and \texttt{wait}; the
-Lab 7 POSIX program uses \texttt{fork}, \texttt{execlp}, and
-\texttt{waitpid}. Both sequences create a child, replace its program, and
-collect its status. \texttt{echo}, rather than the original \texttt{run}
-code, prints \texttt{hello from the child} after the successful
-\texttt{exec}. When replacement fails, xv6's program calls
-\texttt{exit(1)}, whereas the Lab 7 program calls \texttt{exit(127)}.
-Those explicit choices explain the different parent-reported statuses.
+The status is 1 because xv6's example explicitly calls \texttt{exit(1)}
+after failed \texttt{exec}. Lab 7's POSIX version calls
+\texttt{exit(127)} after failed \texttt{execlp}, so its parent reports
+127. The different values are choices made by the example programs;
+\texttt{exec} itself does not assign them.
+
+\subsection{Comparison with the Lab 7 calls}
+\begin{center}
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.2cm}
+                >{\raggedright\arraybackslash}p{4.8cm}
+                >{\raggedright\arraybackslash}p{5.0cm}}
+\toprule
+Step & Lab 7 POSIX program & Lab 8 xv6 program \\
+\midrule
+Create child & \texttt{fork()} & \texttt{fork()} \\
+Replace child & \texttt{execlp("ls", "ls", "-l", ...)} &
+  \texttt{exec("echo", args)} \\
+Collect result & \texttt{waitpid(pid, \&status, 0)} and decode it &
+  \texttt{wait(\&status)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The same three stages occur in both environments. xv6 offers a smaller
+interface: the executable path and argument array are passed to
+\texttt{exec}, and \texttt{wait} returns the child's PID while writing
+its exit status through the pointer. The Lab 7 program used the POSIX
+library call \texttt{execlp} and \texttt{waitpid}, with POSIX status
+decoding. The parent and child remain separate processes in both runs;
+only the child's program is replaced.
+
+\section{Part 2: the pingpong exchange}
+\subsection{Why there are two pipes}
+\texttt{pingpong.c} creates both pipes before \texttt{fork}, so the
+parent and child inherit descriptors for both. A pipe has a read end
+and a write end and carries bytes from the latter to the former. One
+pipe carries the request from parent to child; the other carries the
+reply in the reverse direction. A single pipe would not give the two
+messages separate routes: both processes could compete to read the
+same byte, including a process reading its own write.
+
+\begin{center}
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.2cm}
+                >{\raggedright\arraybackslash}p{4.8cm}
+                >{\raggedright\arraybackslash}p{4.8cm}}
+\toprule
+Process & Descriptors it keeps & Descriptors it closes \\
+\midrule
+Parent & \texttt{p2c[1]} to send; \texttt{c2p[0]} to receive &
+  \texttt{p2c[0]}, \texttt{c2p[1]} \\
+Child & \texttt{p2c[0]} to receive; \texttt{c2p[1]} to send &
+  \texttt{p2c[1]}, \texttt{c2p[0]} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each process closes its retained ends after use as well. This avoids
+unnecessary open descriptors and lets readers observe end-of-file if
+their peer exits without sending data. The program checks the return
+values of \texttt{pipe}, \texttt{fork}, \texttt{read}, and \texttt{write}
+and reports a short error message if one fails.
 
 \clearpage
-\section{A two-pipe pingpong}
-\texttt{pingpong.c} creates a parent-to-child pipe and a child-to-parent
-pipe before forking. The parent sends one byte, the child reads it and
-prints \texttt{received ping}, then writes it back. The parent reads the
-reply and prints \texttt{received pong}:
+\subsection{What orders ping before pong}
+The parent begins with a byte \texttt{'x'} and writes exactly one byte
+to \texttt{p2c[1]}. The child reads it from \texttt{p2c[0]}, prints
+\texttt{received ping}, then writes that same byte to
+\texttt{c2p[1]}. The parent calls \texttt{read(c2p[0], \&b, 1)} before
+printing \texttt{received pong}. If the child has not replied, this
+\texttt{read} blocks. The order follows from the byte exchange; there
+is no timer or separate sleep call.
+
+\begin{lstlisting}[language=C]
+// Parent: send request, then wait for the reply byte.
+write(p2c[1], &b, 1);
+close(p2c[1]);
+read(c2p[0], &b, 1);
+printf("%d: received pong\n", getpid());
+wait(&status);
+
+// Child: receive request, then return the same byte.
+read(p2c[0], &b, 1);
+printf("%d: received ping\n", getpid());
+write(c2p[1], &b, 1);
+\end{lstlisting}
+
+These excerpts show the successful path; the submitted C source also
+checks each call's result and closes descriptors on error. The
+\texttt{wait(\&status)} after the parent's print reaps the child. It
+does not make the parent wait for the reply: that happens at
+\texttt{read(c2p[0], \&b, 1)}.
 
 \begin{lstlisting}
 $ pingpong
@@ -117,19 +293,22 @@ $ pingpong
 7: received pong
 \end{lstlisting}
 
-Two pipes are needed because each pipe is a one-way byte stream. One
-carries the request to the child and the other carries the reply to the
-parent. Each process closes the ends it does not use. The parent's
-\texttt{read(c2p[0], \&b, 1)} blocks until the child writes the reply;
-this call orders the two messages. The later \texttt{wait(\&status)}
-collects the child's exit status.
+The PIDs changed between runs because each invocation created a new
+parent and child. In both runs, the child printed first and the parent
+printed after reading the reply. The byte itself is not displayed;
+the messages identify which side has completed its read.
 
-\section{Conclusion}
-The xv6 run followed the same process lifecycle observed with POSIX calls
-in Lab 7: \texttt{fork} creates a child, \texttt{exec} runs a different
-program in it, and \texttt{wait} reaps it. The failed \texttt{exec} returned
-to the child and exposed its explicit exit code. The two-pipe experiment
-showed how blocking reads coordinate a request and reply without a timing
-delay.
+\section{Verification and conclusion}
+I tested the final \texttt{run} and \texttt{pingpong} programs after
+restoring the \texttt{echo} source and forcing a fresh image build. The
+final QEMU run again printed \texttt{hello from the child}, a status of
+0, and two ping-before-pong pairs. The source copies in
+\texttt{lab8/code/} matched the corresponding xv6 files byte for byte.
+
+The experiments show that xv6 implements the same basic process
+lifecycle as the POSIX example: a child is created, replaced with a new
+program, and reaped. A failed \texttt{exec} returns to the child and
+allows it to choose an error status. Two directed pipes and a blocking
+read provide the request-and-reply ordering in \texttt{pingpong}.
 
 \end{document}
