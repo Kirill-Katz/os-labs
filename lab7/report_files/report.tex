@@ -1,0 +1,170 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\definecolor{codegray}{RGB}{245,245,245}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,
+  breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educa\c{t}iei \c{s}i Cercet\u{a}rii al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnic\u{a} a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatic\u{a} \c{s}i Microelectronic\u{a}\par}
+\vspace{0.45cm}
+{\large Departamentul Ingineria Software \c{s}i Automatic\u{a}\par}
+\vspace{3cm}
+{\Large\bfseries Report on Laboratory Work No. 7\par}
+\vspace{0.55cm}
+{\LARGE\bfseries Processes, Redirection, and Pipes\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Ca\c{t} Chiril\\[0.8cm]
+\textbf{Checked by:} asist. univ. Rei\c{t}man Patricia
+\end{flushleft}
+\vfill
+{Chi\c{s}in\u{a}u -- 2026\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Purpose and environment}
+I built and ran four POSIX C programs to observe process creation, program
+replacement, child reaping, standard-output redirection, and a two-stage pipe.
+The experiments ran on macOS on 26 October 2026. The \texttt{gcc} command
+reported Apple clang 21.0.0. I compiled each source with
+\texttt{-std=c11 -Wall -Wextra -Werror} and used a temporary directory for
+binaries and generated files. The submitted \texttt{code/} directory contains
+only the four required C sources. A second source copy is stored in
+\texttt{xv6-riscv/lab7-linux/}; the programs use POSIX APIs and are outside
+xv6's \texttt{UPROGS}. The required \texttt{report.md} contains the full
+Observe answers and selected command outputs.
+
+\section{Fork, exec, and wait}
+The final \texttt{run.c} forks, executes \texttt{ls -l} in the child, and
+waits in the parent. For the two requested variations, I compiled temporary
+copies that replaced the \texttt{execlp} line with \texttt{date} and
+\texttt{nosuchprog}; the submitted source remains the original \texttt{ls}
+version.
+
+\begin{lstlisting}
+$ ./run
+parent: my PID is 55082
+child:  my PID is 55084, my parent is 55082
+total 536
+... (directory listing)
+parent: child 55084 ended with status 0
+$ ./run_date
+parent: my PID is 52683
+child:  my PID is 52695, my parent is 52683
+Mon Oct 26 11:05:35 EET 2026
+parent: child 52695 ended with status 0
+$ ./run_missing
+parent: my PID is 52681
+child:  my PID is 52694, my parent is 52681
+exec: No such file or directory
+parent: child 52694 ended with status 127
+\end{lstlisting}
+
+\texttt{perror("exec")} runs only for \texttt{nosuchprog} because a successful
+\texttt{execlp} replaces the child's process image and never returns. The
+child's parent value is the original process's PID: 55082 in the \texttt{ls}
+run. The parent observes status 0 for \texttt{ls} and 127 for the missing
+program, matching the child's explicit \texttt{exit(127)} after the error.
+
+\clearpage
+\section{A zombie before waitpid}
+\texttt{zombie.c} is the original \texttt{ls} program with
+\texttt{sleep(20)} inserted before \texttt{waitpid}. After two seconds, the
+parent was sleeping and its child had exited but had not yet been reaped:
+
+\begin{lstlisting}
+$ ./zombie > /dev/null &
+$ sleep 2
+$ ps -o pid,ppid,stat,command -p 54291
+  PID  PPID STAT COMMAND
+54291 54289 SN   ./zombie
+$ ps -axo pid,ppid,stat,command | awk '$2 == 54291 {print}'
+54293 54291 ZN   <defunct>
+$ wait
+$ ps -axo pid,ppid,stat,command | awk '$2 == 54291 {print}'
+(no rows)
+\end{lstlisting}
+
+The \texttt{Z} in \texttt{STAT} means zombie. The additional \texttt{N} is a
+macOS scheduling flag. After 20 seconds the defunct child disappeared because
+the parent's \texttt{waitpid(pid, \&status, 0)} collected its exit status.
+
+\section{Redirecting standard output}
+The child in \texttt{redirect.c} closes descriptor 1, opens \texttt{out.txt},
+then executes \texttt{ls -l}. The new file gets the lowest available number:
+
+\begin{lstlisting}
+$ ./redirect
+open gave descriptor 1
+done: the listing is in out.txt
+$ head -3 out.txt
+total 448
+-rw-r--r--@ 1 chirilcat  wheel      0 Oct 26 11:05 out.txt
+-rwxr-xr-x@ 1 chirilcat  wheel  33848 Oct 26 11:05 pipeline
+\end{lstlisting}
+
+\texttt{open} returned descriptor 1 because it was just closed. The unchanged
+\texttt{ls} writes to descriptor 1, which now refers to the file, so its
+listing is absent from the screen. The diagnostic still goes to descriptor 2
+(standard error). Redirecting errors would require closing descriptor 2
+before opening the error file, or assigning the file to 2 with \texttt{dup2}.
+
+\clearpage
+\section{Connecting commands with a pipe}
+\texttt{pipeline.c} uses a pipe and two forks. The \texttt{ls} child maps the
+pipe's writing end to descriptor 1; the \texttt{wc} child maps its reading
+end to descriptor 0. Each process closes pipe descriptors it no longer uses.
+
+\begin{lstlisting}
+$ ./pipeline
+      77
+$ ls /etc | wc -l
+      77
+\end{lstlisting}
+
+The C program and the shell pipeline produced the same count. I then built
+a temporary version with the parent's \texttt{close(p[1]);} commented out.
+After two seconds, \texttt{ls} had exited while \texttt{wc} and the parent
+were still waiting:
+
+\begin{lstlisting}
+  PID  PPID STAT COMMAND
+54803 54801 SN   ./pipeline_broken
+54806 54803 SN   wc -l
+\end{lstlisting}
+
+\texttt{wc} cannot observe end-of-file while the parent still holds a copy
+of the pipe's write end. I stopped the temporary processes after recording
+their state. The submitted \texttt{pipeline.c} closes both pipe ends in the
+parent.
+
+\section{Conclusion}
+\texttt{fork} creates a child, \texttt{exec} replaces its program, and
+\texttt{waitpid} collects its exit status. Redirection and pipelines assign
+files or pipe endpoints to standard descriptors before \texttt{exec}. The
+broken-pipe experiment showed why every unused write end must be closed so
+the reader can receive end-of-file.
+
+\end{document}
