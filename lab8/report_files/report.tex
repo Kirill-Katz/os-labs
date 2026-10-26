@@ -1,0 +1,135 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\definecolor{codegray}{RGB}{245,245,245}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,
+  breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educa\c{t}iei \c{s}i Cercet\u{a}rii al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnic\u{a} a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatic\u{a} \c{s}i Microelectronic\u{a}\par}
+\vspace{0.45cm}
+{\large Departamentul Ingineria Software \c{s}i Automatic\u{a}\par}
+\vspace{3cm}
+{\Large\bfseries Report on Laboratory Work No. 8\par}
+\vspace{0.55cm}
+{\LARGE\bfseries Process Calls and Pipes Inside xv6\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Ca\c{t} Chiril\\[0.8cm]
+\textbf{Checked by:} asist. univ. Rei\c{t}man Patricia
+\end{flushleft}
+\vfill
+{Chi\c{s}in\u{a}u -- 2026\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Purpose and environment}
+I ran process creation, program replacement, and two-way communication
+inside xv6. I added \texttt{user/run.c} and \texttt{user/pingpong.c} to the
+integrated \texttt{os/xv6-riscv} tree and its \texttt{UPROGS} list, then
+built the image and booted it with QEMU on 26 October 2026. Matching code
+copies are in \texttt{lab8/code/}. The required \texttt{notes.md} records
+the Observe answers and command output. The optional \texttt{primes}
+exercise was not part of the required deliverable.
+
+\section{Fork, exec, and wait inside xv6}
+The final \texttt{run.c} prints its PID, forks, executes \texttt{echo} in
+the child, and waits for the child's status in the parent:
+
+\begin{lstlisting}
+$ run
+parent: my pid is 3
+child: my pid is 4
+hello from the child
+parent: child 4 ended with status 0
+\end{lstlisting}
+
+I also compiled and ran two temporary variations. With
+\texttt{exec("ls", args)}, the child printed the xv6 directory listing
+and exited successfully:
+
+\begin{lstlisting}
+$ run
+parent: my pid is 3
+child: my pid is 4
+.              1 1 1024
+..             1 1 1024
+README         2 2 2441
+... (other directory entries)
+console        3 29 0
+parent: child 4 ended with status 0
+\end{lstlisting}
+
+With \texttt{exec("nosuchprog", args)}, replacement failed, so the child
+continued at the following error line:
+
+\begin{lstlisting}
+$ run
+parent: my pid is 3
+child: my pid is 4
+exec failed
+parent: child 4 ended with status 1
+\end{lstlisting}
+
+The xv6 program uses \texttt{fork}, \texttt{exec}, and \texttt{wait}; the
+Lab 7 POSIX program uses \texttt{fork}, \texttt{execlp}, and
+\texttt{waitpid}. Both sequences create a child, replace its program, and
+collect its status. \texttt{echo}, rather than the original \texttt{run}
+code, prints \texttt{hello from the child} after the successful
+\texttt{exec}. When replacement fails, xv6's program calls
+\texttt{exit(1)}, whereas the Lab 7 program calls \texttt{exit(127)}.
+Those explicit choices explain the different parent-reported statuses.
+
+\clearpage
+\section{A two-pipe pingpong}
+\texttt{pingpong.c} creates a parent-to-child pipe and a child-to-parent
+pipe before forking. The parent sends one byte, the child reads it and
+prints \texttt{received ping}, then writes it back. The parent reads the
+reply and prints \texttt{received pong}:
+
+\begin{lstlisting}
+$ pingpong
+6: received ping
+5: received pong
+$ pingpong
+8: received ping
+7: received pong
+\end{lstlisting}
+
+Two pipes are needed because each pipe is a one-way byte stream. One
+carries the request to the child and the other carries the reply to the
+parent. Each process closes the ends it does not use. The parent's
+\texttt{read(c2p[0], \&b, 1)} blocks until the child writes the reply;
+this call orders the two messages. The later \texttt{wait(\&status)}
+collects the child's exit status.
+
+\section{Conclusion}
+The xv6 run followed the same process lifecycle observed with POSIX calls
+in Lab 7: \texttt{fork} creates a child, \texttt{exec} runs a different
+program in it, and \texttt{wait} reaps it. The failed \texttt{exec} returned
+to the child and exposed its explicit exit code. The two-pipe experiment
+showed how blocking reads coordinate a request and reply without a timing
+delay.
+
+\end{document}

@@ -135,6 +135,8 @@ UPROGS=\
 	$U/_args\
 	$U/_mystat\
 	$U/_find\
+	$U/_run\
+	$U/_pingpong\
 	$U/_cat\
 	$U/_echo\
 	$U/_forktest\
