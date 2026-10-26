@@ -4,6 +4,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}
+\usepackage{needspace}
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage[hidelinks]{hyperref}
@@ -159,6 +160,67 @@ were still waiting:
 of the pipe's write end. I stopped the temporary processes after recording
 their state. The submitted \texttt{pipeline.c} closes both pipe ends in the
 parent.
+
+\clearpage
+\section{Handout questions and answers}
+Every required Observe question from the Lab 7 handout is stated here with its
+answer. The measurements and process-table output are shown in the preceding sections.
+
+\subsection{Part 1: fork, exec, and wait}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} The line \texttt{perror("exec")} is in the child, right after \texttt{execlp}. Why is it printed only with \texttt{nosuchprog}?
+\par\textbf{Answer:} Successful \texttt{execlp} replaces the child program and never returns to that line. The lookup of \texttt{nosuchprog} fails, so \texttt{execlp} returns and \texttt{perror} prints the error.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Which number does the child print as ``my parent'', and whose PID is it?
+\par\textbf{Answer:} In the recorded \texttt{ls} run it printed 55082, the PID printed by the original parent process. The particular PID changes from run to run.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} What status does the parent see with \texttt{ls}, and what status with \texttt{nosuchprog}?
+\par\textbf{Answer:} It saw 0 for successful \texttt{ls} and 127 for \texttt{nosuchprog}. The child explicitly called \texttt{exit(127)} after the failed \texttt{execlp}.
+\end{enumerate}
+
+\subsection{Part 2: a zombie}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Which letter does \texttt{ls} have in the \texttt{STAT} column, and what does it mean?
+\par\textbf{Answer:} Its \texttt{STAT} began with \texttt{Z}, meaning zombie: the child had exited, but the parent had not yet collected its status. The host also displayed \texttt{N}, a scheduling flag.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} After 20 seconds, is the \texttt{[ls] <defunct>} line still there? Which line of \texttt{zombie.c} made it disappear?
+\par\textbf{Answer:} No. The process-table check after the parent finished found no child row. The \texttt{waitpid(pid, \&status, 0)} line reaped the child after \texttt{sleep(20)}.
+\end{enumerate}
+
+\Needspace{12\baselineskip}
+\subsection{Part 3: redirection}
+\begin{enumerate}
+\item \textbf{Question:} Which number did \texttt{open} give, and why exactly that one?
+\par\textbf{Answer:} It returned descriptor 1 because the child had closed standard output, leaving 1 as the lowest free descriptor.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} \texttt{ls} was not changed at all. Why does its listing not appear on the screen?
+\par\textbf{Answer:} \texttt{ls} writes to descriptor 1 as usual. The child made descriptor 1 refer to \texttt{out.txt} before \texttt{exec}, so the listing went to the file.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} To redirect the errors instead (like \texttt{2> err.txt}), which descriptor would you close before \texttt{open}?
+\par\textbf{Answer:} Close descriptor 2, standard error. The next \texttt{open} would then reuse 2, assuming no lower descriptor is free.
+\end{enumerate}
+
+\subsection{Part 4: a pipe}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Did \texttt{./pipeline} and \texttt{ls /etc | wc -l} give the same number?
+\par\textbf{Answer:} Yes. Both printed 77 on the measured host.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} After the change, which of the two children never ends, \texttt{ls} or \texttt{wc}?
+\par\textbf{Answer:} \texttt{wc} remained waiting. The process table showed \texttt{wc -l} still active after \texttt{ls} had exited.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Why, in one sentence: what is \texttt{wc} waiting for?
+\par\textbf{Answer:} \texttt{wc} is waiting for end-of-file on the pipe, which cannot arrive while the parent still holds its write end open.
+\end{enumerate}
 
 \section{Conclusion}
 \texttt{fork} creates a child, \texttt{exec} replaces its program, and

@@ -4,6 +4,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}
+\usepackage{needspace}
 \usepackage{amsmath}
 \usepackage{xcolor}
 \usepackage{listings}
@@ -52,7 +53,7 @@ paths, and \texttt{find}, which walks directories recursively. I used the
 \texttt{os/xv6-riscv} tree with the local RISC-V toolchain and QEMU on
 26 October 2026. I rebuilt the file system image with
 \texttt{make clean \&\& make fs.img}. The selected command output below is
-also recorded in \texttt{report\_files/notes.md}. Inode numbers depend on the
+also recorded in the accompanying notes. Inode numbers depend on the
 programs present in the image.
 
 \section{Directory entries and file types}
@@ -179,6 +180,67 @@ $ mystat cat r3
 cat: file, inode 7, links 2, size 37344 bytes
 r3: file, inode 7, links 2, size 37344 bytes
 \end{lstlisting}
+
+\clearpage
+\section{Handout questions and answers}
+The following are the required Observe questions from the Lab 6 handout, with the
+answers derived from the xv6 sources and the QEMU output above.
+
+\subsection{Part 1: what xv6 shows}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} What do types 1, 2 and 3 mean (\texttt{kernel/stat.h})?
+\par\textbf{Answer:} Type 1 (\texttt{T\_DIR}) is a directory, type 2 (\texttt{T\_FILE}) is a regular file, and type 3 (\texttt{T\_DEVICE}) is a device.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Which inode number does the root directory have, and why are \texttt{.} and \texttt{..} the same there?
+\par\textbf{Answer:} The root has inode 1 (\texttt{ROOTINO}). Both names refer to inode 1 because the root has no parent directory above itself.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} An empty directory \texttt{a} has size 32. A directory entry has a fixed size. How big is one entry, and which two entries does \texttt{a} contain?
+\par\textbf{Answer:} One entry is 16 bytes: a 2-byte inode number and a 14-byte name. The two entries are \texttt{.} (\texttt{a} itself) and \texttt{..} (its parent).
+\end{enumerate}
+
+\subsection{Part 2: mystat and hard links}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Paste the outputs after \texttt{ln} and after \texttt{rm}. What changed and what did not?
+\par\textbf{Answer:} The measured output was:
+\begin{lstlisting}
+$ ln README r2
+$ mystat README r2
+README: file, inode 2, links 2, size 2441 bytes
+r2: file, inode 2, links 2, size 2441 bytes
+$ rm README
+$ mystat r2
+r2: file, inode 2, links 1, size 2441 bytes
+\end{lstlisting}
+Both names initially shared inode 2 and its 2441-byte data. \texttt{ln} increased the link count to two. Removing \texttt{README} removed one name and reduced the count to one; the inode, size, and content readable through \texttt{r2} did not change.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Find the line in \texttt{kernel/sysfile.c} (\texttt{sys\_unlink}) that decrements the link count. When are the data blocks freed?
+\par\textbf{Answer:} The line is \lstinline!ip->nlink--;!, followed by \texttt{iupdate(ip);}. When the link count is zero and the last in-memory reference is released, \texttt{iput()} in \texttt{kernel/fs.c} calls \texttt{itrunc(ip)} to free the blocks.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} xv6 has no symbolic links and no permissions. Look at \texttt{struct dinode} in \texttt{kernel/fs.h}: which fields does an xv6 inode have?
+\par\textbf{Answer:} It has \texttt{type}, \texttt{major}, \texttt{minor}, \texttt{nlink}, \texttt{size}, and \texttt{addrs[NDIRECT + 1]}. The address array holds twelve direct block addresses and one indirect address.
+\end{enumerate}
+
+\subsection{Part 3: file system limits}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} What does \texttt{ls} show for \texttt{averyveryverylongname}, and which constant explains it?
+\par\textbf{Answer:} It showed \texttt{averyveryveryl}.
+That is the first 14 characters; \texttt{DIRSIZ=14} limits directory-entry names.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Compute the largest file xv6 can hold: 12 direct blocks plus one indirect block that holds block numbers of 4 bytes each, blocks of \texttt{BSIZE} bytes. Show the calculation.
+\par\textbf{Answer:} With \texttt{BSIZE=1024}, the indirect block holds $1024/4=256$ addresses. The maximum is $(12+256)\times1024=274{,}432$ bytes, or 268~KiB.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} From the \texttt{nmeta} line: how many blocks does the whole disk have, and how many are for the log, the inodes, and the data?
+\par\textbf{Answer:} The image has 2000 blocks total: 31 log blocks, 13 inode blocks, and 1953 data blocks. The other three are the boot block, superblock, and bitmap block, giving 47 metadata blocks.
+\end{enumerate}
 
 \section{Conclusion}
 The experiments showed that directory names map to inodes, hard links share

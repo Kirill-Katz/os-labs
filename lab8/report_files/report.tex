@@ -4,6 +4,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}
+\usepackage{needspace}
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{xcolor}
@@ -298,6 +299,38 @@ parent and child. In both runs, the child printed first and the parent
 printed after reading the reply. The byte itself is not displayed;
 the messages identify which side has completed its read.
 
+\clearpage
+\section{Handout questions and answers}
+These are the required Observe questions from the Lab 8 handout, followed by
+the answers supported by the runs and source code above.
+
+\subsection{Part 1: run inside xv6}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Write the three calls that \texttt{run.c} uses in xv6 and the three calls \texttt{run.c} used on Linux in Lab 7. What is the same?
+\par\textbf{Answer:} xv6 uses \texttt{fork()}, \texttt{exec("echo", args)}, and \texttt{wait(\&status)}. The Lab 7 POSIX version uses \texttt{fork()}, \texttt{execlp(...)}, and \texttt{waitpid(pid, \&status, 0)}. Both programs create a child, replace its program, and have the parent collect its exit status.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Who prints ``hello from the child'': the code of \texttt{run}, or \texttt{echo}?
+\par\textbf{Answer:} \texttt{echo} prints it. \texttt{run} puts those words in the argument vector; after successful \texttt{exec}, the child's \texttt{run} code has been replaced by \texttt{echo}.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Why is the status 1 here and 127 on Linux? (Look at the exit line after \texttt{exec} in both programs.)
+\par\textbf{Answer:} The xv6 example calls \texttt{exit(1)} after failed \texttt{exec}; the Lab 7 POSIX example calls \texttt{exit(127)} after failed \texttt{execlp}. The parent reports the code chosen by its child.
+\end{enumerate}
+
+\subsection{Part 2: pingpong}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Why do you need TWO pipes, and not one for both directions?
+\par\textbf{Answer:} A pipe has one read end and one write end and carries bytes in one direction. \texttt{p2c} sends the request from parent to child; \texttt{c2p} sends the reply from child to parent. Separate streams prevent the two sides from competing to read the same byte.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Nothing in your code says ``wait until the child has replied''. Which call makes the parent wait?
+\par\textbf{Answer:} The parent's \texttt{read(c2p[0], \&b, 1)} blocks until the child writes the reply byte (or closes the pipe). The later \texttt{wait(\&status)} only reaps the child.
+\end{enumerate}
+
+\clearpage
 \section{Verification and conclusion}
 I tested the final \texttt{run} and \texttt{pingpong} programs after
 restoring the \texttt{echo} source and forcing a fresh image build. The

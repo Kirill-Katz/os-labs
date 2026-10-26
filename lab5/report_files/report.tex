@@ -5,6 +5,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}
+\usepackage{needspace}
 \usepackage{setspace}
 \usepackage{caption}
 \usepackage{chngcntr}
@@ -254,6 +255,93 @@ than the shell, opened \cmd{/proc/self/status}, so \cmd{Name} was \cmd{head}.
 Similarly, \cmd{ls -l /proc/self/fd} listed the file descriptors of that
 \cmd{ls} process: standard input was the terminal, standard output and error
 were the transcript pipe, and descriptor 3 was its open fd directory.
+
+\section{Handout questions and answers}
+The questions below reproduce every required Observe prompt from the lab handout. The
+command output supporting each answer appears in the corresponding section above.
+
+\subsection{Part 1: the tree and file types}
+\begin{enumerate}
+\item \textbf{Question:} For each path in the second line, write its type from the first letter of \cmd{ls -l}.
+\par\textbf{Answer:} \cmd{/etc} and \cmd{/tmp} are directories (\cmd{d}); \cmd{/etc/passwd} is a regular file (\cmd{-}); \cmd{/bin} is a symbolic link (\cmd{l}); and \cmd{/dev/null} is a character device (\cmd{c}).
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} What is \cmd{/bin} on your system: a directory or a link, and to where?
+\par\textbf{Answer:} It is a symbolic link to \cmd{usr/bin}, resolving to \cmd{/usr/bin}.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Find one character device and one block device in \cmd{/dev}.
+\par\textbf{Answer:} \cmd{/dev/null} is a character device; \cmd{/dev/vda} is a block device.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Which is bigger on your laptop, \cmd{/var/log} or \cmd{/usr}, and by roughly how much?
+\par\textbf{Answer:} In the measured Ubuntu guest, \cmd{/usr} was 5.7~GiB and \cmd{/var/log} was 33~MiB. \cmd{/usr} was roughly 5.67~GiB larger, or about 177 times as large.
+\end{enumerate}
+
+\subsection{Part 2: inodes and links}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Which number in \cmd{stat} is the inode, and which tells how many names the file has?
+\par\textbf{Answer:} \cmd{Inode: 1056330} is the inode number of \cmd{notes.txt}; \cmd{Links: 1} is the hard-link count, the number of directory entries naming that inode.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} After \cmd{rm notes.txt}, why could you still read \cmd{hard.txt}? What does \cmd{rm} really remove?
+\par\textbf{Answer:} Both names referred to inode 1056330. \cmd{rm} removed the \cmd{notes.txt} directory entry and reduced the link count from two to one. \cmd{hard.txt} still named the inode and its data, so \cmd{cat hard.txt} printed \cmd{hello}.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Why did \cmd{cat soft.txt} fail at the end, although \cmd{soft.txt} still exists? How big is \cmd{soft.txt} and why exactly that size?
+\par\textbf{Answer:} \cmd{soft.txt} stored the relative target path \cmd{hard.txt}. Once that target name was removed, resolution failed even though the symlink itself remained. Its size was 8 bytes, the length of the eight-character string \cmd{hard.txt}.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} A new directory has 2 links, and 4 after you create two subdirectories. Explain where each link comes from.
+\par\textbf{Answer:} The new directory \cmd{d} is named once in its parent and once by its own \cmd{.} entry. Each child directory, \cmd{d/x} and \cmd{d/y}, has a \cmd{..} entry referring back to \cmd{d}, raising \cmd{d}'s link count to four.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Why does a 2-byte file use 4.0K, and a 1 GB file use 0?
+\par\textbf{Answer:} The two-byte file needs one allocated 4~KiB block. \cmd{truncate -s 1G big.img} set the logical length without writing data blocks; the file was sparse, so \cmd{du} reported zero allocated data space.
+\end{enumerate}
+
+\subsection{Part 3: permissions}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Write 600, 644, 755 and 700 as rwx strings, and give one real use for each.
+\par\textbf{Answer:} 600 is \cmd{rw-------} for a private owner-readable file; 644 is \cmd{rw-r--r--} for a publicly readable document; 755 is \cmd{rwxr-xr-x} for an executable or traversable directory; 700 is \cmd{rwx------} for a private directory.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} With \cmd{chmod 000} you own the file but cannot read it. Why does ownership not help?
+\par\textbf{Answer:} Ownership selects which class of mode bits applies; it does not override those bits. Mode 000 removes the owner's read permission, so the normal user receives \cmd{Permission denied}.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} What is your umask, and how does it explain the permissions of \cmd{new.txt} and \cmd{newdir}?
+\par\textbf{Answer:} The measured umask was \cmd{0002}. It removes other-write from default file mode 0666, giving 0664 (\cmd{rw-rw-r--}), and from default directory mode 0777, giving 0775 (\cmd{rwxrwxr-x}).
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Explain the \cmd{box} experiment: what does \cmd{r} allow on a directory, and what does \cmd{x} allow?
+\par\textbf{Answer:} Directory read permission lets \cmd{ls} enumerate names; execute permission lets a process traverse a known name. With read only, \cmd{ls box} listed \cmd{f} but \cmd{cat box/f} failed. With execute only, listing failed but \cmd{cat box/f} printed \cmd{hi}.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} What do the \cmd{s} in \cmd{/usr/bin/passwd} and the \cmd{t} in \cmd{/tmp} mean, and why does \cmd{passwd} need the \cmd{s}?
+\par\textbf{Answer:} \cmd{s} is set-user-ID: \cmd{passwd} runs with its owner root's effective privileges so it can update protected password data. \cmd{t} is the sticky bit: in shared \cmd{/tmp}, it restricts removal and renaming of entries to their owner, the directory owner, or root.
+\end{enumerate}
+
+\subsection{Part 4: disks and the kernel as files}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Draw your disk: disk name, partitions, which one is mounted at \cmd{/} and with what file system type.
+\par\textbf{Answer:} The 64~GiB virtual disk is \cmd{/dev/vda}. Its 1~GiB \cmd{/dev/vda1} partition is VFAT and mounted at \cmd{/boot/efi}. Its 62.9~GiB \cmd{/dev/vda2} partition is ext4 and mounted at \cmd{/}.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} How full is your root file system?
+\par\textbf{Answer:} \cmd{df -h /} reported 62~GiB total, 12~GiB used, 48~GiB available, and 20\% use.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} How many CPU cores and how much RAM does your laptop have, according to \cmd{/proc}?
+\par\textbf{Answer:} The Ubuntu guest exposed six logical processors and \cmd{MemTotal: 3461284 kB}, approximately 3.30~GiB of RAM. These describe the guest VM, not the physical host.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} \cmd{/proc/self/status} showed the name of a program. Which one, and why that one?
+\par\textbf{Answer:} It showed \cmd{Name: head}. \cmd{/proc/self} refers to whichever process opens it; \cmd{head}, not the shell, opened the file in \cmd{head -5 /proc/self/status}.
+\end{enumerate}
 
 \section*{Conclusion}
 \addcontentsline{toc}{section}{Conclusion}
