@@ -1,0 +1,190 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\definecolor{codegray}{RGB}{245,245,245}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,
+  breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educa\c{t}iei \c{s}i Cercet\u{a}rii al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnic\u{a} a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatic\u{a} \c{s}i Microelectronic\u{a}\par}
+\vspace{0.45cm}
+{\large Departamentul Ingineria Software \c{s}i Automatic\u{a}\par}
+\vspace{3cm}
+{\Large\bfseries Report on Laboratory Work No. 6\par}
+\vspace{0.55cm}
+{\LARGE\bfseries Inside the xv6 File System\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Ca\c{t} Chiril\\[0.8cm]
+\textbf{Checked by:} asist. univ. Rei\c{t}man Patricia
+\end{flushleft}
+\vfill
+{Chi\c{s}in\u{a}u -- 2026\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Purpose and environment}
+I inspected the xv6 file system's directory entries, inodes, hard links, and disk
+layout, then ran two user programs: \texttt{mystat}, which reports metadata for
+paths, and \texttt{find}, which walks directories recursively. I used the
+\texttt{os/xv6-riscv} tree with the local RISC-V toolchain and QEMU on
+26 October 2026. I rebuilt the file system image with
+\texttt{make clean \&\& make fs.img}. The selected command output below is
+also recorded in \texttt{report\_files/notes.md}. Inode numbers depend on the
+programs present in the image.
+
+\section{Directory entries and file types}
+\texttt{kernel/stat.h} defines type 1 as a directory (\texttt{T\_DIR}), type 2
+as a regular file (\texttt{T\_FILE}), and type 3 as a device
+(\texttt{T\_DEVICE}). The root has inode 1, as defined by \texttt{ROOTINO}.
+Its \texttt{.} and \texttt{..} both refer to inode 1 because the root has no
+parent directory above it.
+
+\begin{lstlisting}
+$ ls .
+.              1 1 1024
+..             1 1 1024
+README         2 2 2441
+... (other built-in programs)
+console        3 27 0
+$ mkdir a
+$ ls a
+.              1 28 32
+..             1 1 1024
+\end{lstlisting}
+
+An empty \texttt{a} has two entries, \texttt{.} (inode 28) and \texttt{..}
+(inode 1). Its 32-byte size follows from two 16-byte \texttt{dirent}
+records. Each record stores a 2-byte inode number and a 14-byte name.
+
+\clearpage
+\section{Metadata and hard links}
+\texttt{mystat} calls \texttt{stat()} for each argument. It prints the file
+type, inode number, link count, and size; an invalid path is reported on
+standard error without stopping subsequent arguments.
+
+\begin{lstlisting}
+$ mystat README . console
+README: file, inode 2, links 1, size 2441 bytes
+.: directory, inode 1, links 2, size 1024 bytes
+console: device, inode 27, links 1, size 0 bytes
+$ ln README r2
+$ mystat README r2
+README: file, inode 2, links 2, size 2441 bytes
+r2: file, inode 2, links 2, size 2441 bytes
+$ rm README
+$ mystat r2
+r2: file, inode 2, links 1, size 2441 bytes
+$ cat r2 | wc
+48 336 2441
+\end{lstlisting}
+
+Creating \texttt{r2} added a second directory entry for inode 2, so the
+link count became 2 while inode and size stayed the same. Removing
+\texttt{README} reduced the count to 1. The content remained readable through
+\texttt{r2}. The root's link count was 2 here because \texttt{mkdir a} had
+already added a child directory.
+
+In \texttt{kernel/sysfile.c}, \texttt{sys\_unlink} performs
+\lstinline!ip->nlink--;! and \texttt{iupdate(ip);}. When the count becomes zero
+and the final in-memory reference is released, \texttt{iput()} in
+\texttt{kernel/fs.c} invokes \texttt{itrunc(ip)} to free the data blocks.
+The on-disk \texttt{struct dinode} contains \texttt{type}, \texttt{major},
+\texttt{minor}, \texttt{nlink}, \texttt{size}, and
+\texttt{addrs[NDIRECT + 1]}: twelve direct block addresses and one indirect
+block address. It has no permissions or symbolic-link field.
+
+\clearpage
+\section{File system limits}
+The constants in \texttt{kernel/fs.h} are \texttt{BSIZE=1024} and
+\texttt{NDIRECT=12}. The indirect block holds
+\texttt{NINDIRECT=BSIZE/sizeof(uint)=256} addresses. The directory name
+limit is \texttt{DIRSIZ=14}, so a longer name is truncated to 14 bytes:
+
+\begin{lstlisting}
+$ mkdir averyveryverylongname
+$ ls .
+averyveryveryl 1 29 32
+\end{lstlisting}
+
+The largest file is
+\[
+  \left(12+\frac{1024}{4}\right)\times1024
+  = 274{,}432\text{ bytes} = 268\text{ KiB}.
+\]
+This uses twelve direct blocks and 256 block addresses in one indirect block.
+The image builder printed:
+
+\begin{lstlisting}
+nmeta 47 (boot, super, log blocks 31, inode blocks 13, bitmap blocks 1) blocks 1953 total 2000
+\end{lstlisting}
+
+The disk has 2000 blocks in total: 31 for the log, 13 for inodes, 1953 for
+data, and one each for the boot block, superblock, and bitmap. Thus the
+metadata count is $2+31+13+1=47$.
+
+\clearpage
+\section{Recursive find}
+\texttt{find} checks that its first argument is a directory, reads each
+\texttt{dirent}, ignores free entries and \texttt{.}/\texttt{..}, compares the
+last name component with \texttt{strcmp}, and recursively visits child
+directories. It closes each opened directory. Its path buffer is checked
+before appending a child name.
+
+\begin{lstlisting}
+$ mkdir a/b
+$ echo x > a/b/r2
+$ echo y > a/r2
+$ find . r2
+./a/b/r2
+./a/r2
+./r2
+$ find a b
+a/b
+\end{lstlisting}
+
+The three paths match by last component. The root-level \texttt{r2} is the
+remaining hard link to the original \texttt{README}; the two files created
+with \texttt{echo} are separate files. An additional link check confirmed
+that \texttt{find} reports a linked name and \texttt{mystat} identifies its
+inode:
+
+\begin{lstlisting}
+$ ln cat r3
+$ find . r3
+./r3
+$ mystat cat r3
+cat: file, inode 7, links 2, size 37344 bytes
+r3: file, inode 7, links 2, size 37344 bytes
+\end{lstlisting}
+
+\section{Conclusion}
+The experiments showed that directory names map to inodes, hard links share
+an inode and its data, and removal frees file data only after no links and no
+open references remain. The image layout and file-size limit follow directly
+from xv6's constants. Both new programs built and ran in QEMU; \texttt{find}
+found nested matches and \texttt{mystat} reflected the link-count changes.
+
+\end{document}

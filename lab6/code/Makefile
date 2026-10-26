@@ -132,6 +132,7 @@ mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.h
 
 UPROGS=\
 	$U/_sleep\
+	$U/_args\
 	$U/_mystat\
 	$U/_find\
 	$U/_cat\
