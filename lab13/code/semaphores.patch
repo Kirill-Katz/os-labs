@@ -1,0 +1,520 @@
+diff --git a/xv6-riscv/Makefile b/xv6-riscv/Makefile
+index 553dad5..c311fda 100644
+--- a/xv6-riscv/Makefile
++++ b/xv6-riscv/Makefile
+@@ -18,6 +18,7 @@ OBJS = \
+   $K/trap.o \
+   $K/syscall.o \
+   $K/sysproc.o \
++  $K/sem.o \
+   $K/bio.o \
+   $K/fs.o \
+   $K/log.o \
+@@ -153,6 +154,11 @@ UPROGS=\
+ 	$U/_grind\
+ 	$U/_wc\
+ 	$U/_zombie\
++	$U/_semtest\
++	$U/_mix\
++	$U/_semcheck\
++	$U/_semsleep\
++	$U/_semprobe\
+ 	$U/_trace\
+ 	$U/_tracetest\
+ 	$U/_logstress\
+diff --git a/xv6-riscv/kernel/defs.h b/xv6-riscv/kernel/defs.h
+index 0ae6896..002bd19 100644
+--- a/xv6-riscv/kernel/defs.h
++++ b/xv6-riscv/kernel/defs.h
+@@ -96,6 +96,7 @@ void            scheduler(void) __attribute__((noreturn));
+ void            sched(void);
+ void            sleep_prepare(void*);
+ void            sleep(void);
++void            sleep_killable(void);
+ void            userinit(void);
+ int             kwait(uint64);
+ void            wakeup(void*);
+@@ -104,6 +105,9 @@ int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
+ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
+ void            procdump(void);
+ 
++// sem.c
++void            seminit(void);
++
+ // swtch.S
+ void            swtch(struct context*, struct context*);
+ 
+diff --git a/xv6-riscv/kernel/main.c b/xv6-riscv/kernel/main.c
+index df58e32..9a658dd 100644
+--- a/xv6-riscv/kernel/main.c
++++ b/xv6-riscv/kernel/main.c
+@@ -20,6 +20,7 @@ main()
+     kvminit();          // create kernel page table
+     kvminithart();      // turn on paging
+     procinit();         // process table
++    seminit();          // global counting semaphores
+     trapinit();         // trap vectors
+     trapinithart();     // install kernel trap vector
+     plicinit();         // set up interrupt controller
+diff --git a/xv6-riscv/kernel/proc.c b/xv6-riscv/kernel/proc.c
+index e6bf758..3928f86 100644
+--- a/xv6-riscv/kernel/proc.c
++++ b/xv6-riscv/kernel/proc.c
+@@ -561,12 +561,16 @@ sleep_prepare(void *chan)
+ // Put the thread to sleep.  Assumes sleep_prepare() was called before.
+ // If the channel registered by sleep_prepare() has been woken up in
+ // the meantime, do not go to sleep, and instead return immediately.
+-void
+-sleep(void)
++static void
++sleep_common(int interruptible)
+ {
+   struct proc *p = myproc();
+ 
+   acquire(&p->lock);
++  // Interruptible waits must not miss a kill between registration and sleep.
++  // Other kernel waits keep their original, non-interruptible semantics.
++  if (interruptible && p->killed)
++    p->chan = 0;
+   if (p->chan != 0) {
+     p->state = SLEEPING;
+     sched();
+@@ -574,6 +578,19 @@ sleep(void)
+   release(&p->lock);
+ }
+ 
++void
++sleep(void)
++{
++  sleep_common(0);
++}
++
++// Semaphore waits may be cancelled by kill, including before actual sleep.
++void
++sleep_killable(void)
++{
++  sleep_common(1);
++}
++
+ // Wake up all processes sleeping on channel chan.
+ void
+ wakeup(void *chan)
+diff --git a/xv6-riscv/kernel/syscall.c b/xv6-riscv/kernel/syscall.c
+index 78ef40d..3a3f132 100644
+--- a/xv6-riscv/kernel/syscall.c
++++ b/xv6-riscv/kernel/syscall.c
+@@ -104,6 +104,9 @@ extern uint64 sys_mkdir(void);
+ extern uint64 sys_close(void);
+ extern uint64 sys_sync(void);
+ extern uint64 sys_trace(void);
++extern uint64 sys_sem_init(void);
++extern uint64 sys_sem_down(void);
++extern uint64 sys_sem_up(void);
+ 
+ // An array mapping syscall numbers from syscall.h
+ // to the function that handles the system call.
+@@ -132,6 +135,9 @@ static uint64 (*syscalls[])(void) = {
+   [SYS_close]   = sys_close,
+   [SYS_sync]    = sys_sync,
+   [SYS_trace]   = sys_trace,
++  [SYS_sem_init] = sys_sem_init,
++  [SYS_sem_down] = sys_sem_down,
++  [SYS_sem_up]   = sys_sem_up,
+   // clang-format on
+ };
+ 
+@@ -144,6 +150,8 @@ static char *syscallnames[] = {
+   [SYS_write] = "write",   [SYS_mknod] = "mknod",   [SYS_unlink] = "unlink",
+   [SYS_link] = "link",     [SYS_mkdir] = "mkdir",   [SYS_close] = "close",
+   [SYS_sync] = "sync",     [SYS_trace] = "trace",
++  [SYS_sem_init] = "sem_init", [SYS_sem_down] = "sem_down",
++  [SYS_sem_up] = "sem_up",
+ };
+ 
+ void
+diff --git a/xv6-riscv/kernel/syscall.h b/xv6-riscv/kernel/syscall.h
+index f66fb28..f347cba 100644
+--- a/xv6-riscv/kernel/syscall.h
++++ b/xv6-riscv/kernel/syscall.h
+@@ -22,3 +22,6 @@
+ #define SYS_close  21
+ #define SYS_sync   22
+ #define SYS_trace  23
++#define SYS_sem_init 24
++#define SYS_sem_down 25
++#define SYS_sem_up   26
+diff --git a/xv6-riscv/user/user.h b/xv6-riscv/user/user.h
+index b8002ab..7e364f6 100644
+--- a/xv6-riscv/user/user.h
++++ b/xv6-riscv/user/user.h
+@@ -26,6 +26,9 @@ int pause(int);
+ int uptime(void);
+ int sync(void);
+ int trace(int);
++int sem_init(int, int);
++int sem_down(int);
++int sem_up(int);
+ 
+ // ulib.c
+ int stat(const char *, struct stat *);
+diff --git a/xv6-riscv/user/usys.pl b/xv6-riscv/user/usys.pl
+index f9185b5..4c77cee 100755
+--- a/xv6-riscv/user/usys.pl
++++ b/xv6-riscv/user/usys.pl
+@@ -44,3 +44,6 @@ entry("pause");
+ entry("uptime");
+ entry("sync");
+ entry("trace");
++entry("sem_init");
++entry("sem_down");
++entry("sem_up");
+diff --git a/xv6-riscv/kernel/sem.c b/xv6-riscv/kernel/sem.c
+new file mode 100644
+index 0000000..2ba5130
+--- /dev/null
++++ b/xv6-riscv/kernel/sem.c
+@@ -0,0 +1,84 @@
++// Lab 13: eight global counting semaphores, shared by all processes.
++#include "types.h"
++#include "riscv.h"
++#include "defs.h"
++#include "param.h"
++#include "spinlock.h"
++#include "proc.h"
++
++#define NSEM 8
++#define SEM_MAX 0x7fffffff
++
++struct sem {
++  struct spinlock lock;
++  int value;
++};
++static struct sem sems[NSEM];
++
++void
++seminit(void)
++{
++  for (int i = 0; i < NSEM; i++) {
++    initlock(&sems[i].lock, "semaphore");
++    sems[i].value = 0;
++  }
++}
++
++uint64
++sys_sem_init(void)
++{
++  int id, value;
++  argint(0, &id);
++  argint(1, &value);
++  if (id < 0 || id >= NSEM || value < 0)
++    return -1;
++  acquire(&sems[id].lock);
++  sems[id].value = value;
++  release(&sems[id].lock);
++  return 0;
++}
++
++uint64
++sys_sem_down(void)
++{
++  int id;
++  argint(0, &id);
++  if (id < 0 || id >= NSEM)
++    return -1;
++  struct sem *s = &sems[id];
++
++  acquire(&s->lock);
++  while (s->value == 0) {
++    sleep_prepare(s);
++    release(&s->lock);
++    sleep_killable(); // Same two-phase wait, with kill checked atomically.
++    acquire(&s->lock);
++    if (killed(myproc())) {
++      release(&s->lock);
++      return -1;
++    }
++  }
++  s->value--;
++  release(&s->lock);
++  return 0;
++}
++
++uint64
++sys_sem_up(void)
++{
++  int id;
++  argint(0, &id);
++  if (id < 0 || id >= NSEM)
++    return -1;
++  struct sem *s = &sems[id];
++
++  acquire(&s->lock);
++  if (s->value == SEM_MAX) {
++    release(&s->lock);
++    return -1; // Do not overflow the signed counter.
++  }
++  s->value++;
++  wakeup(s);
++  release(&s->lock);
++  return 0;
++}
+diff --git a/xv6-riscv/user/semtest.c b/xv6-riscv/user/semtest.c
+new file mode 100644
+index 0000000..a44d9af
+--- /dev/null
++++ b/xv6-riscv/user/semtest.c
+@@ -0,0 +1,37 @@
++// Lab 13: the handout's order and ping-pong tests.
++#include "kernel/types.h"
++#include "user/user.h"
++
++int
++main(void)
++{
++  sem_init(0, 0);
++  if (fork() == 0) {
++    sem_down(0);
++    printf("child: I ran after the parent\n");
++    exit(0);
++  }
++  pause(10);
++  printf("parent: done, I let the child go\n");
++  sem_up(0);
++  wait(0);
++
++  sem_init(1, 1);
++  sem_init(2, 0);
++  if (fork() == 0) {
++    for (int i = 1; i <= 3; i++) {
++      sem_down(2);
++      printf("  pong %d\n", i);
++      sem_up(1);
++    }
++    exit(0);
++  }
++  for (int i = 1; i <= 3; i++) {
++    sem_down(1);
++    printf("ping %d\n", i);
++    sem_up(2);
++  }
++  wait(0);
++  printf("semtest: OK\n");
++  exit(0);
++}
+diff --git a/xv6-riscv/user/mix.c b/xv6-riscv/user/mix.c
+new file mode 100644
+index 0000000..0a25d6f
+--- /dev/null
++++ b/xv6-riscv/user/mix.c
+@@ -0,0 +1,30 @@
++// Lab 13: one write per character; optionally protect the whole line.
++#include "kernel/types.h"
++#include "user/user.h"
++
++void
++lines(char *s, int uselock)
++{
++  for (int k = 0; k < 5; k++) {
++    if (uselock)
++      sem_down(3);
++    for (char *p = s; *p; p++)
++      write(1, p, 1);
++    if (uselock)
++      sem_up(3);
++  }
++}
++
++int
++main(int argc, char *argv[])
++{
++  int uselock = (argc > 1);
++  sem_init(3, 1);
++  if (fork() == 0) {
++    lines("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n", uselock);
++    exit(0);
++  }
++  lines("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n", uselock);
++  wait(0);
++  exit(0);
++}
+diff --git a/xv6-riscv/user/semcheck.c b/xv6-riscv/user/semcheck.c
+new file mode 100644
+index 0000000..df0760f
+--- /dev/null
++++ b/xv6-riscv/user/semcheck.c
+@@ -0,0 +1,111 @@
++// Focused Lab 13 regression tests. Only the parent prints successful results.
++#include "kernel/types.h"
++#include "user/user.h"
++
++static void
++check(int ok, char *message)
++{
++  if (!ok) {
++    fprintf(2, "semcheck: FAIL: %s\n", message);
++    exit(1);
++  }
++}
++
++static void
++joinok(void)
++{
++  int status = -99;
++  check(wait(&status) >= 0 && status == 0, "child exit status");
++}
++
++int
++main(void)
++{
++  for (int id = -1; id <= 8; id += 9) {
++    check(sem_init(id, 0) == -1, "invalid init ID");
++    check(sem_down(id) == -1, "invalid down ID");
++    check(sem_up(id) == -1, "invalid up ID");
++  }
++  check(sem_init(0, -1) == -1, "negative initial value");
++  for (int id = 0; id < 8; id++) {
++    check(sem_init(id, 0) == 0, "initialize valid ID");
++    check(sem_up(id) == 0 && sem_down(id) == 0, "valid ID token round trip");
++  }
++  printf("semcheck: IDs and initial values PASS\n");
++
++  check(sem_init(7, 0x7fffffff) == 0, "maximum count");
++  check(sem_up(7) == -1, "reject count overflow");
++  check(sem_down(7) == 0 && sem_up(7) == 0, "maximum count preserved");
++  check(sem_init(7, 0) == 0, "restore count");
++  printf("semcheck: count overflow guard PASS\n");
++
++  int ready[2], done[2];
++  char byte = 'x';
++  check(pipe(ready) == 0 && pipe(done) == 0, "pipes");
++  check(sem_init(4, 0) == 0, "multiwaiter init");
++  for (int i = 0; i < 6; i++) {
++    int pid = fork();
++    check(pid >= 0, "multiwaiter fork");
++    if (pid == 0) {
++      close(ready[0]);
++      close(done[0]);
++      check(write(ready[1], &byte, 1) == 1, "announce waiter");
++      check(sem_down(4) == 0, "wait for permit");
++      check(write(done[1], &byte, 1) == 1, "announce completion");
++      close(ready[1]);
++      close(done[1]);
++      exit(0);
++    }
++  }
++  close(ready[1]);
++  close(done[1]);
++  for (int i = 0; i < 6; i++)
++    check(read(ready[0], &byte, 1) == 1, "all waiters started");
++  pause(3);
++  for (int i = 0; i < 6; i++) {
++    check(sem_up(4) == 0, "release a permit");
++    check(read(done[0], &byte, 1) == 1, "one waiter completes");
++  }
++  close(ready[0]);
++  close(done[0]);
++  for (int i = 0; i < 6; i++)
++    joinok();
++  printf("semcheck: six waiters and six posts PASS\n");
++
++  check(sem_init(4, 1) == 0 && sem_init(5, 0) == 0, "stress init");
++  int pid = fork();
++  check(pid >= 0, "stress fork");
++  if (pid == 0) {
++    for (int i = 0; i < 1000; i++)
++      check(sem_down(5) == 0 && sem_up(4) == 0, "child handoff");
++    exit(0);
++  }
++  for (int i = 0; i < 1000; i++)
++    check(sem_down(4) == 0 && sem_up(5) == 0, "parent handoff");
++  joinok();
++  printf("semcheck: 1000 ping-pong handoffs PASS\n");
++
++  for (int i = 0; i < 20; i++) {
++    check(pipe(ready) == 0 && sem_init(6, 0) == 0, "kill init");
++    pid = fork();
++    check(pid >= 0, "kill fork");
++    if (pid == 0) {
++      close(ready[0]);
++      check(write(ready[1], &byte, 1) == 1, "announce kill waiter");
++      close(ready[1]);
++      sem_down(6);
++      exit(2); // A non-killed success on an empty semaphore is an error.
++    }
++    close(ready[1]);
++    check(read(ready[0], &byte, 1) == 1, "kill waiter started");
++    close(ready[0]);
++    if (i & 1)
++      pause(1); // Alternate immediate kills and already-blocked waiters.
++    check(kill(pid) == 0, "kill waiter");
++    int status = 0;
++    check(wait(&status) == pid && status == -1, "killed waiter reaped");
++  }
++  printf("semcheck: 20 immediate/blocked waiter kills PASS\n");
++  printf("semcheck: ALL TESTS PASSED\n");
++  exit(0);
++}
+diff --git a/xv6-riscv/user/semsleep.c b/xv6-riscv/user/semsleep.c
+new file mode 100644
+index 0000000..4536906
+--- /dev/null
++++ b/xv6-riscv/user/semsleep.c
+@@ -0,0 +1,39 @@
++// Let the QEMU harness capture Ctrl-P while a child is blocked in sem_down.
++#include "kernel/types.h"
++#include "user/user.h"
++
++int
++main(void)
++{
++  int ready[2];
++  if (pipe(ready) < 0 || sem_init(7, 0) < 0)
++    exit(1);
++  int pid = fork();
++  if (pid < 0)
++    exit(1);
++  char byte = 'x';
++  if (pid == 0) {
++    close(ready[0]);
++    if (write(ready[1], &byte, 1) != 1)
++      exit(1);
++    close(ready[1]);
++    if (sem_down(7) < 0)
++      exit(1);
++    exit(0);
++  }
++  close(ready[1]);
++  if (read(ready[0], &byte, 1) != 1)
++    exit(1);
++  close(ready[0]);
++  pause(3);
++  printf("semsleep: blocked child pid %d\n", pid);
++  printf("semsleep: child waiting; inspect with Ctrl-P\n");
++  pause(30);
++  if (sem_up(7) < 0)
++    exit(1);
++  int status = -1;
++  if (wait(&status) != pid || status != 0)
++    exit(1);
++  printf("semsleep: PASS\n");
++  exit(0);
++}
+diff --git a/xv6-riscv/user/semprobe.c b/xv6-riscv/user/semprobe.c
+new file mode 100644
+index 0000000..21cc511
+--- /dev/null
++++ b/xv6-riscv/user/semprobe.c
+@@ -0,0 +1,13 @@
++// Small deterministic sequence for tracing the three new syscall names.
++#include "kernel/types.h"
++#include "user/user.h"
++
++int
++main(void)
++{
++  if (sem_init(4, 2) < 0 || sem_down(4) < 0 || sem_down(4) < 0 ||
++      sem_up(4) < 0 || sem_down(4) < 0)
++    exit(1);
++  printf("semprobe: PASS\n");
++  exit(0);
++}

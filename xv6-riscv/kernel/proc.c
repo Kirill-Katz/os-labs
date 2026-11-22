@@ -561,17 +561,34 @@ sleep_prepare(void *chan)
 // Put the thread to sleep.  Assumes sleep_prepare() was called before.
 // If the channel registered by sleep_prepare() has been woken up in
 // the meantime, do not go to sleep, and instead return immediately.
-void
-sleep(void)
+static void
+sleep_common(int interruptible)
 {
   struct proc *p = myproc();
 
   acquire(&p->lock);
+  // Interruptible waits must not miss a kill between registration and sleep.
+  // Other kernel waits keep their original, non-interruptible semantics.
+  if (interruptible && p->killed)
+    p->chan = 0;
   if (p->chan != 0) {
     p->state = SLEEPING;
     sched();
   }
   release(&p->lock);
+}
+
+void
+sleep(void)
+{
+  sleep_common(0);
+}
+
+// Semaphore waits may be cancelled by kill, including before actual sleep.
+void
+sleep_killable(void)
+{
+  sleep_common(1);
 }
 
 // Wake up all processes sleeping on channel chan.

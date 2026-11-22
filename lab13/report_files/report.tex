@@ -1,0 +1,320 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\definecolor{codegray}{RGB}{245,245,245}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,
+  breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educa\c{t}iei \c{s}i Cercet\u{a}rii al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnic\u{a} a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatic\u{a} \c{s}i Microelectronic\u{a}\par}
+\vspace{0.45cm}
+{\large Departamentul Ingineria Software \c{s}i Automatic\u{a}\par}
+\vspace{3cm}
+{\Large\bfseries Report on Laboratory Work No. 13\par}
+\vspace{0.55cm}
+{\LARGE\bfseries Semaphores in Your Own Kernel\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Ca\c{t} Chiril\\[0.8cm]
+\textbf{Checked by:} asist. univ. Rei\c{t}man Patricia
+\end{flushleft}
+\vfill
+{Chi\c{s}in\u{a}u -- 2026\par}
+\end{titlepage}
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Aim, environment, and deliverables}
+In Labs 11 and 12, applications used synchronization objects supplied by
+Linux's libraries. This lab implements counting semaphores inside xv6 as
+three new system calls. A semaphore combines a protected integer with
+wait-channel registration and scheduler sleep/wakeup. All three required
+parts are complete in the integrated \texttt{xv6-riscv/} tree.
+
+The tools were Ubuntu 24.04.5 LTS on aarch64, RISC-V GCC 13.3.0, and QEMU
+8.2.2. The xv6 guest ran with three CPUs and 128 MiB RAM. I verified that
+the starting tree built and booted, then captured the user-side checkpoint
+before adding the handlers. The final implementation was rebuilt from clean
+sources using xv6's \texttt{-Wall -Werror} compilation settings.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Call & Number & Meaning \\
+\midrule
+\texttt{sem\_init(id, value)} & 24 & Set the initial counter \\
+\texttt{sem\_down(id)} & 25 & Take a permit, waiting if needed \\
+\texttt{sem\_up(id)} & 26 & Return a permit and wake waiters \\
+\bottomrule
+\end{tabular}
+\end{center}
+The existing \texttt{sync} (22) and \texttt{trace} (23) calls remain intact.
+IDs 0--7 identify entries in one global kernel table shared by all
+processes; no per-process semaphore copy is made by fork. The optional
+\texttt{sem\_trydown} syscall 27 was not implemented.
+
+The integrated tree is the working submission. Fourteen matching changed
+source files, the Makefile included, are copied under \texttt{lab13/code/}.
+The patch records changes against the pre-Lab-13 tree. The required
+\texttt{notes.txt} contains the four Observe answers. Editable report
+sources, the assignment, actual runs, and verification are retained under
+\texttt{report\_files/}. The additional \texttt{semcheck}, \texttt{semsleep},
+and \texttt{semprobe} user programs are regression/evidence tools, not
+additional system calls.
+
+\begin{lstlisting}
+cd xv6-riscv
+make clean
+make -j4 TOOLPREFIX=riscv64-linux-gnu- kernel/kernel fs.img
+make qemu TOOLPREFIX=riscv64-linux-gnu- CPUS=3
+# Exit QEMU with Ctrl-A followed by X.
+\end{lstlisting}
+
+\clearpage
+\section{Part 1: syscall numbers and the user side}
+\subsection{Following the number into the kernel}
+I added numbers 24--26 in \texttt{kernel/syscall.h}, declarations in
+\texttt{user/user.h}, and three \texttt{entry(...)} lines in
+\texttt{user/usys.pl}. The generated assembly stubs load the call number
+into \texttt{a7}, run \texttt{ecall}, and return. The first two arguments
+are passed in \texttt{a0} and \texttt{a1}; the return value comes back in
+\texttt{a0}.
+
+The Makefile includes \texttt{semtest} and \texttt{mix} in \texttt{UPROGS},
+so their binaries are placed on the xv6 disk image. The submitted versions
+follow the handout: \texttt{semtest} checks order and ping/pong behavior;
+\texttt{mix} writes each character separately and optionally protects a
+whole line with semaphore 3.
+
+\subsection{Check 1: reaching unknown calls}
+After the user-side changes, before kernel dispatch entries existed, the
+first lines of the actual checkpoint were:
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/checkpoint1-excerpt.txt}
+The child ran before the parent because the unknown down call returned
+an error instead of blocking. The later checkpoint output contains more
+unknown-call errors and interleaved ping/pong characters. The complete
+original capture is retained separately; this excerpt is explicitly
+shortened.
+
+This proves the new user stubs reached the kernel with the intended
+numbers. It is the required intermediate failure, not the final behavior.
+The handout's \texttt{semtest} does not check every syscall return value,
+so its final ``OK'' string can appear even in this broken intermediate
+state. Final verification therefore checks the entire expected ordering,
+absence of unknown calls, and independent return-value regressions rather
+than relying on that string alone.
+
+\subsection{User programs and semaphore roles}
+For the first test, semaphore 0 starts at zero: the child must wait for
+the parent's post. Ping/pong uses semaphore 1 at one and semaphore 2 at
+zero, passing a turn permit back and forth. Semaphore 3 starts at one
+for the optional line lock in \texttt{mix}. Each program initializes its
+IDs before forking or starting the corresponding exchange.
+
+\clearpage
+\section{Part 2: the kernel semaphore table}
+\subsection{Counter, spinlock, and dispatch}
+The new \texttt{kernel/sem.c} contains eight static entries:
+\begin{lstlisting}[language=C]
+struct sem {
+  struct spinlock lock;
+  int value;
+};
+static struct sem sems[NSEM];
+\end{lstlisting}
+A boot-time \texttt{seminit()} explicitly initializes every spinlock and
+zeroes the counts before user processes begin. \texttt{main.c} invokes it
+and \texttt{defs.h} declares it. The Makefile links \texttt{sem.o}; the
+syscall dispatch table registers all three handlers. The Lab 10 trace name
+table is extended too, avoiding missing names when tracing the new calls.
+
+Each handler decodes its integer arguments with \texttt{argint}. IDs outside
+0--7 are rejected. Init also rejects a negative start value, then updates
+the count under the entry's spinlock. Up increments under the same lock
+and calls \texttt{wakeup(s)}. An added overflow guard rejects an increment
+at \texttt{0x7fffffff}, preserving the signed counter instead of wrapping.
+
+\subsection{The blocking down operation}
+The central wait path is:
+\begin{lstlisting}[language=C]
+acquire(&s->lock);
+while (s->value == 0) {
+  sleep_prepare(s);
+  release(&s->lock);
+  sleep_killable();
+  acquire(&s->lock);
+  if (killed(myproc())) {
+    release(&s->lock);
+    return -1;
+  }
+}
+s->value--;
+release(&s->lock);
+return 0;
+\end{lstlisting}
+The address of the table entry is the wait channel in both prepare and
+wakeup. Registration happens before releasing the counter lock. If up
+occurs before the waiter actually sleeps, wakeup clears the registered
+channel and the sleep path returns without blocking. If the process is
+already sleeping, it becomes runnable. This closes the ordinary
+check/register/sleep missed-wakeup window.
+
+The submitted \texttt{sleep\_killable()} is a small robustness extension
+explained on the next page. It uses this tree's two-stage interface, not
+the book's incompatible \texttt{sleep(chan, lock)} call.
+
+\clearpage
+\section{Blocking, cancellation, and the required result}
+\subsection{A narrowly scoped cancellation guard}
+Code review found a separate kill-timing gap: a kill can arrive after
+wait registration but before the process changes to \texttt{SLEEPING}.
+The existing kill path wakes an already sleeping process but does not
+cancel a pending registration in that interval.
+
+I factored the existing sleep body into a private
+\texttt{sleep\_common(interruptible)} helper. Ordinary \texttt{sleep()}
+passes zero, preserving the original behavior for unrelated kernel waits.
+Semaphore waits use \texttt{sleep\_killable()}, which passes one and checks
+\texttt{p->killed} under \texttt{p->lock} immediately before entering
+\texttt{SLEEPING}. If killed, it clears the pending channel and returns;
+down then detects cancellation and returns an error. The same process
+lock serializes this decision with kill. This was an inspection-driven
+robustness change, not a claim that a failing pre-fix run was captured.
+
+The registration, semaphore-lock release, actual sleep, and counter-lock
+reacquisition remain the same two-phase design required by the handout.
+A blocked process does not busy-spin waiting for the counter to change.
+The spinlock is held only for the short state checks and updates, never
+while switching away to the scheduler.
+
+\subsection{Check 2: semtest works}
+All three final invocations, within the same final boot, produced the
+required sequence:
+\lstinputlisting{output/semtest-1.txt}
+The parent's ten-tick delay does not let the child run past down: it
+remains blocked until the parent posts. Two turn semaphores then enforce
+three strict ping-before-pong pairs. The independent focused tests also
+validate syscall return values and child exit statuses.
+
+\clearpage
+\section{Part 3: a semaphore as the line lock}
+\subsection{Without the lock}
+Both processes write five lines, one character per \texttt{write} syscall.
+The following is the first actual unlocked run, not the sample text:
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/mix-1.txt}
+Both unlocked runs showed mixed-content lines. Each run still contained
+150 uppercase A characters, 150 lowercase b characters, and ten newlines.
+The exact interleaving and apparent line lengths depend on scheduling.
+A 30-letter line plus its newline costs \textbf{31 write syscalls}; the
+whole sequence is not one atomic console operation.
+
+\subsection{With the lock}
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/mix-lock-1.txt}
+The down before the character loop and up after it make one complete
+line, including its newline, a critical section. All three locked runs
+produced exactly five complete A lines and five complete b lines. Other
+valid runs may alternate whole lines; neither a fixed process order nor
+FIFO fairness is promised by this semaphore.
+
+\clearpage
+\section{Handout questions and answers}
+\begin{enumerate}
+\Needspace{9\baselineskip}
+\item \textbf{Question:} Without the lock, why do the letters mix? How many system calls does one line cost?
+\par\textbf{Answer:} Each character is a separate write, so the two
+processes' writes can interleave on the shared console. Thirty letters
+and one newline cost 31 write calls. A loop of separate calls is not
+implicitly a critical section.
+
+\Needspace{9\baselineskip}
+\item \textbf{Question:} With the lock every line is whole. Which two lines of mix.c make one line a critical section?
+\par\textbf{Answer:} Use \texttt{sem\_down(3)} before the loop and
+\texttt{sem\_up(3)} after it. The initial value is one, so a successful
+down reserves the single permit for the whole loop, including the newline.
+
+\Needspace{10\baselineskip}
+\item \textbf{Question:} In sem\_down the test is while (s->value == 0), not if. Why can a process wake up and still find 0?
+\par\textbf{Answer:} Up wakes every process registered on the entry's
+address, but one post adds only one permit. Another process may acquire
+the spinlock first and consume it. A wakeup does not reserve a token;
+the waiter must recheck the counter under the lock and sleep again if
+it remains zero. A killed waiter is separately detected and cancelled.
+
+\Needspace{12\baselineskip}
+\item \textbf{Question:} Sem\_down releases the spinlock before sleep. What would go wrong if it slept holding the spinlock?
+\par\textbf{Answer:} Up needs that lock to increment and wake, so keeping
+it while blocked prevents the operation needed for progress. xv6 also
+requires \texttt{sched()} to hold only the process lock, so sleeping with
+the semaphore spinlock would violate the invariant and can panic with
+\texttt{sched locks}. Register first, release the semaphore lock, sleep,
+and reacquire before retesting.
+\end{enumerate}
+
+\section{Scope and limitations}
+These are simple global teaching semaphores, not named POSIX objects with
+ownership or access control. Initialize/reset IDs before concurrent use;
+concurrent reinitialization of a live semaphore is outside the demonstrated
+contract. There is no fairness guarantee or automatic token recovery if
+a process exits while holding a permit. The optional nonblocking syscall
+27 was not added. The cancellation and overflow guards do not change
+those limits.
+
+\clearpage
+\section{Additional verification and conclusion}
+\subsection{Focused semantic tests}
+The checked \texttt{semcheck} regressions cover all eight IDs; invalid
+IDs -1 and 8; negative counts; preservation of the maximum count after
+rejected overflow; six children released by six posts; 1000 ping/pong
+rounds; and twenty immediate/already-blocked waiter kills. Child statuses
+are checked too. Every group passed, ending with
+\texttt{semcheck: ALL TESTS PASSED}. These tests do not exhaust all schedules.
+
+\subsection{A sleeping waiter and compatibility with trace}
+During \texttt{semsleep}, I sent Ctrl-P to the xv6 console while the child
+was blocked on an empty semaphore:
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/semsleep.txt}
+PID 51 was reported as \texttt{sleep}; posting later woke it and it exited
+successfully. This supports the blocking design. It is not a measurement
+of total machine CPU use or a CPU-utilization benchmark.
+
+The combined mask for numbers 24--26 is 117440512. The retained trace
+probe produced:
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/trace-semaphores.txt}
+This checks that the existing Lab 10 tracer knows the new names and prints
+their zero success results. The old read-only trace still returned
+1023, 965, 453, and 0 for the unchanged 2441-byte README.
+
+The \texttt{usertests -q} quick suite ran \textbf{68 tests} and reported
+\texttt{ALL TESTS PASSED}; deliberate user traps are not kernel panics.
+All \textbf{62 evidence assertions} passed, including required sequences,
+character counts, sleeping-state and trace evidence, and byte-for-byte
+comparison of fourteen source copies with the tested tree.
+
+A protected count, registration before release, and scheduler sleep turn
+semaphore waits into blocking operations rather than busy-waiting. The
+loop is essential because a wakeup does not reserve a permit. With one
+initial permit, two semaphore calls protect a whole line containing 31
+separate writes, connecting the patterns of Labs 11--12 to kernel scheduling.
+\end{document}

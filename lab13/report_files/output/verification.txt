@@ -1,0 +1,62 @@
+PASS: starting xv6 tree boots
+PASS: Part 1 stubs reach unimplemented kernel calls 24 and 25
+PASS: Part 1 child runs before the parent without working semaphores
+PASS: semtest #1: exact order and three strict ping/pong pairs
+PASS: semtest #2: exact order and three strict ping/pong pairs
+PASS: semtest #3: exact order and three strict ping/pong pairs
+PASS: mix-1: all 300 letters and ten newlines preserved
+PASS: mix-2: all 300 letters and ten newlines preserved
+PASS: mix-lock-1: all 300 letters and ten newlines preserved
+PASS: mix-lock-1: ten whole lines, five per process
+PASS: mix-lock-2: all 300 letters and ten newlines preserved
+PASS: mix-lock-2: ten whole lines, five per process
+PASS: mix-lock-3: all 300 letters and ten newlines preserved
+PASS: mix-lock-3: ten whole lines, five per process
+PASS: unlocked runs actually exhibit mixed letters
+PASS: IDs and initial values PASS
+PASS: count overflow guard PASS
+PASS: six waiters and six posts PASS
+PASS: 1000 ping-pong handoffs PASS
+PASS: 20 immediate/blocked waiter kills PASS
+PASS: ALL TESTS PASSED
+PASS: focused tests report no failure or unknown call
+PASS: Ctrl-P captures the semaphore waiter in SLEEPING state
+PASS: observed sleeper wakes, exits successfully, and is reaped
+PASS: Lab 10 trace prints all three new syscall names and results
+PASS: existing trace/read experiment remains unchanged
+PASS: complete quick usertests suite passes without leaked tracing
+PASS: source copy matches tested tree: Makefile
+PASS: source copy matches tested tree: kernel/defs.h
+PASS: source copy matches tested tree: kernel/main.c
+PASS: source copy matches tested tree: kernel/proc.c
+PASS: source copy matches tested tree: kernel/sem.c
+PASS: source copy matches tested tree: kernel/syscall.c
+PASS: source copy matches tested tree: kernel/syscall.h
+PASS: source copy matches tested tree: user/user.h
+PASS: source copy matches tested tree: user/usys.pl
+PASS: source copy matches tested tree: user/semtest.c
+PASS: source copy matches tested tree: user/mix.c
+PASS: source copy matches tested tree: user/semcheck.c
+PASS: source copy matches tested tree: user/semsleep.c
+PASS: source copy matches tested tree: user/semprobe.c
+PASS: no kernel panic in baseline-build.txt
+PASS: no kernel panic in baseline-session.txt
+PASS: no kernel panic in baseline.txt
+PASS: no kernel panic in checkpoint1-build.txt
+PASS: no kernel panic in checkpoint1-session.txt
+PASS: no kernel panic in checkpoint1.txt
+PASS: no kernel panic in final-build.txt
+PASS: no kernel panic in final-session.txt
+PASS: no kernel panic in mix-1.txt
+PASS: no kernel panic in mix-2.txt
+PASS: no kernel panic in mix-lock-1.txt
+PASS: no kernel panic in mix-lock-2.txt
+PASS: no kernel panic in mix-lock-3.txt
+PASS: no kernel panic in regression.txt
+PASS: no kernel panic in semcheck.txt
+PASS: no kernel panic in semsleep.txt
+PASS: no kernel panic in semtest-1.txt
+PASS: no kernel panic in semtest-2.txt
+PASS: no kernel panic in semtest-3.txt
+PASS: no kernel panic in trace-read.txt
+PASS: no kernel panic in trace-semaphores.txt

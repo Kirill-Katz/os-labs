@@ -1,0 +1,123 @@
+LAB 13 — Semaphores in Your Own Kernel
+
+Scope and environment
+All three required parts are complete in the integrated xv6-riscv tree.
+Host tools: Ubuntu 24.04.5 LTS (aarch64), RISC-V GCC 13.3.0, QEMU 8.2.2.
+Guest: xv6-riscv with 3 CPUs and 128 MiB RAM.
+New calls: sem_init = 24, sem_down = 25, sem_up = 26.
+Existing sync (22) and trace (23) remain supported. Semaphore IDs are 0..7
+and refer to one global kernel table shared by processes.
+The optional sem_trydown syscall 27 was not implemented.
+
+OBSERVE 1
+Q: Without the lock, why do the letters mix? How many system calls does
+   one line cost?
+A: mix calls write separately for each character, so the two processes'
+   writes can interleave on the shared console. A line has 30 letters
+   plus one newline, costing 31 write syscalls. Neither a sequence of
+   separate writes nor a whole user loop is automatically atomic.
+   Both actual unlocked runs showed mixed-content lines. Each preserved
+   150 A characters, 150 b characters, and ten newlines.
+
+OBSERVE 2
+Q: With the lock every line is whole. Which two lines make a line a
+   critical section?
+A: sem_down(3) before the character loop and sem_up(3) after it, including
+   the newline. Semaphore 3 starts at one, so only one process may execute
+   that whole loop at a time. Three locked runs each produced exactly
+   five complete 30-A lines and five complete 30-b lines. The order of
+   whole lines is not guaranteed to be five A lines followed by five b
+   lines, and no FIFO scheduling guarantee is claimed.
+
+OBSERVE 3
+Q: Why does sem_down test while (s->value == 0), not if? Why can a
+   process wake up and still find zero?
+A: sem_up wakes every process registered on the semaphore address, but
+   a single post adds only one permit. One process may acquire the
+   spinlock and consume that permit before another woken process runs.
+   The latter must recheck the value under the spinlock and sleep again.
+   Waking is not a reservation of a token; a killed waiter is separately
+   detected and returns an error rather than consuming a token.
+
+OBSERVE 4
+Q: What would go wrong if sem_down slept while holding the spinlock?
+A: sem_up needs the same spinlock to increase the count and wake waiters.
+   Keeping it while blocked would prevent the operation needed to make
+   progress. xv6 also requires sched() to hold only the current process
+   lock, so an actual sleep while holding the semaphore spinlock would
+   violate that invariant and can panic with "sched locks". The correct
+   sequence registers the wait channel, releases the semaphore spinlock,
+   sleeps, then reacquires it before retesting the count.
+
+PART 1 CHECKPOINT (actual first lines; PIDs may differ)
+$ semtest
+3 semtest: unknown sys call 24
+4 semtest: unknown sys call 25
+child: I ran after the parent
+parent: done, I let the child go
+The remaining output contains unknown-call errors and interleaved ping/pong.
+This checkpoint was captured before the kernel implementation. The handout's
+unchecked semtest can still print its final OK string in this intermediate
+state; that string alone is not proof that the semaphore calls work.
+
+PART 2 CHECKPOINT (three identical successful final runs)
+$ semtest
+parent: done, I let the child go
+child: I ran after the parent
+ping 1
+  pong 1
+ping 2
+  pong 2
+ping 3
+  pong 3
+semtest: OK
+
+IMPLEMENTATION
+- kernel/sem.c stores eight counters, each protected by its own spinlock.
+- seminit() explicitly initializes the locks at boot, before user processes.
+- sem_init validates ID and nonnegative start value; initialize before use.
+- sem_down registers sleep_prepare(s) while holding the counter lock,
+  releases it before sleeping, and checks again after reacquiring it.
+- sem_up increments under the lock and calls wakeup(s) on the same address.
+- The user declarations, generated stubs, syscall table, Makefile objects,
+  user programs, and trace name table all include the new calls.
+
+Small robustness additions beyond the handout:
+1. sem_up rejects signed-count overflow at 0x7fffffff, preserving the value.
+2. A private sleep_common helper preserves the original sleep() behavior
+   for existing kernel callers. Semaphore waits use sleep_killable(), which
+   checks p->killed under p->lock immediately before changing to SLEEPING.
+   This closes the kill-after-registration/before-sleep timing gap without
+   changing unrelated kernel waits. sem_down still uses the same two-phase
+   registration/release/sleep/reacquire design, not the book's two-argument
+   sleep(chan, lock) interface.
+
+ADDITIONAL VERIFICATION
+- All eight IDs work; IDs -1 and 8 and negative initial counts return -1.
+- Overflow is rejected without corrupting the maximum count.
+- Six waiting children finish after six posts, with successful exit statuses.
+- 1000 ping/pong rounds complete without a missed-wakeup hang.
+- 20 waiter cancellation tests alternate immediate and already-blocked kills;
+  every child is reaped with status -1.
+- Ctrl-P captures child PID 51 in state "sleep" inside semsleep; posting
+  wakes it and it exits successfully. This supports the blocking design;
+  it is not a CPU-utilization benchmark.
+- trace 117440512 semprobe prints sem_init/down/down/up/down, each -> 0.
+- The old trace 32 grep hello README result remains 1023, 965, 453, 0.
+- usertests -q: 68 tests, ALL TESTS PASSED. Deliberate user traps in memory
+  protection tests are expected; no kernel panic occurred.
+- All 62 retained evidence assertions passed, including comparison of the
+  fourteen submitted source copies with the tested integrated tree.
+
+LIMITS
+These are simple global teaching semaphores, not named/owned POSIX objects.
+Initialize or reset them before concurrent use; concurrent reinitialization,
+access control, fairness and automatic token recovery after a holder exits
+are not provided. The optional nonblocking syscall was not added.
+
+CONCLUSION
+A counting semaphore combines a protected integer with atomic wait-channel
+registration and scheduler sleep/wakeup. A waiter does not busy-spin while
+blocked, and a wakeup must always be followed by a protected predicate check.
+With one initial permit, two semaphore calls turn the whole output line into
+a critical section even though it contains 31 separate writes.

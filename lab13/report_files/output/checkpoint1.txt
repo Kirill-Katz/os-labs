@@ -1,0 +1,27 @@
+semtest
+3 semtest: unknown sys call 24
+4 semtest: unknown sys call 25
+child: I ran after the parent
+parent: done, I let the child go
+3 semtest: unknown sys call 26
+3 semtest: unknown sys call 24
+3 semtest: unknown sys call 24
+3 semtest: unknown sys call 25
+p5 semtest: unknown sys call 25
+in g  po1ng
+ 3 semtest: unknown sys call 26
+3 semtest: unknown sys call 25
+p1i
+n5 semtest: unknown sys call 26
+5 semtest: ungknown sys call 25
+  2 
+p3 semtest: unknown sys call 26
+o3 semtest: unknown sys call 25
+npgi n2
+g5 semtest: unknown sys call 26
+ 35 semtest: unknow
+n sys call 25
+3 semtest: unknown sys call 26
+  pong 3
+5 semtest: unknown sys call 26
+semtest: OK

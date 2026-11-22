@@ -1,0 +1,6 @@
+semtest
+3 semtest: unknown sys call 24
+4 semtest: unknown sys call 25
+child: I ran after the parent
+parent: done, I let the child go
+... (remaining errors and interleaving omitted; full output in checkpoint1.txt) ...

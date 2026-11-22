@@ -1,0 +1,9 @@
+semsleep
+semsleep: blocked child pid 51
+semsleep: child waiting; inspect with Ctrl-P
+
+1 sleep  init
+2 sleep  sh
+50 sleep  semsleep
+51 sleep  semsleep
+semsleep: PASS

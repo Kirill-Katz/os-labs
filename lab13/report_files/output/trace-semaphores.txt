@@ -1,0 +1,7 @@
+trace 117440512 semprobe
+52: syscall sem_init -> 0
+52: syscall sem_down -> 0
+52: syscall sem_down -> 0
+52: syscall sem_up -> 0
+52: syscall sem_down -> 0
+semprobe: PASS

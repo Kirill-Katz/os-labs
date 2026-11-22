@@ -1,0 +1,4 @@
+mix-1: 8 mixed-content output lines observed
+mix-2: 9 mixed-content output lines observed
+Blocked semaphore child PID in snapshot: 51
+usertests -q test count: 68

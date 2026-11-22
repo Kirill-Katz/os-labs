@@ -1,0 +1,7 @@
+semcheck
+semcheck: IDs and initial values PASS
+semcheck: count overflow guard PASS
+semcheck: six waiters and six posts PASS
+semcheck: 1000 ping-pong handoffs PASS
+semcheck: 20 immediate/blocked waiter kills PASS
+semcheck: ALL TESTS PASSED

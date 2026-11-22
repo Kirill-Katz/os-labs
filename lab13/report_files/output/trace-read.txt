@@ -1,0 +1,5 @@
+trace 32 grep hello README
+53: syscall read -> 1023
+53: syscall read -> 965
+53: syscall read -> 453
+53: syscall read -> 0
