@@ -1,0 +1,380 @@
+[
+  {
+    "program": "prodcons",
+    "run": 1,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/prodcons"
+    ],
+    "returncode": 0,
+    "wall_seconds": 2.420951876003528,
+    "stdout": "put 1    (in buffer: 1)\nput 2    (in buffer: 2)\nput 3    (in buffer: 3)\nput 4    (in buffer: 4)\n            take 1   (in buffer: 3)\nput 5    (in buffer: 4)\n            take 2   (in buffer: 3)\nput 6    (in buffer: 4)\n            take 3   (in buffer: 3)\nput 7    (in buffer: 4)\n            take 4   (in buffer: 3)\nput 8    (in buffer: 4)\n            take 5   (in buffer: 3)\n            take 6   (in buffer: 2)\n            take 7   (in buffer: 1)\n            take 8   (in buffer: 0)\n",
+    "stderr": ""
+  },
+  {
+    "program": "prodcons",
+    "run": 2,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/prodcons"
+    ],
+    "returncode": 0,
+    "wall_seconds": 2.4340031260217074,
+    "stdout": "put 1    (in buffer: 1)\nput 2    (in buffer: 2)\nput 3    (in buffer: 3)\nput 4    (in buffer: 4)\n            take 1   (in buffer: 3)\nput 5    (in buffer: 4)\n            take 2   (in buffer: 3)\nput 6    (in buffer: 4)\n            take 3   (in buffer: 3)\nput 7    (in buffer: 4)\n            take 4   (in buffer: 3)\nput 8    (in buffer: 4)\n            take 5   (in buffer: 3)\n            take 6   (in buffer: 2)\n            take 7   (in buffer: 1)\n            take 8   (in buffer: 0)\n",
+    "stderr": ""
+  },
+  {
+    "program": "prodcons",
+    "run": 3,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/prodcons"
+    ],
+    "returncode": 0,
+    "wall_seconds": 2.432821583992336,
+    "stdout": "put 1    (in buffer: 1)\nput 2    (in buffer: 2)\nput 3    (in buffer: 3)\nput 4    (in buffer: 4)\n            take 1   (in buffer: 3)\nput 5    (in buffer: 4)\n            take 2   (in buffer: 3)\nput 6    (in buffer: 4)\n            take 3   (in buffer: 3)\nput 7    (in buffer: 4)\n            take 4   (in buffer: 3)\nput 8    (in buffer: 4)\n            take 5   (in buffer: 3)\n            take 6   (in buffer: 2)\n            take 7   (in buffer: 1)\n            take 8   (in buffer: 0)\n",
+    "stderr": ""
+  },
+  {
+    "program": "prodcons_bad",
+    "run": 1,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/prodcons_bad"
+    ],
+    "returncode": 124,
+    "wall_seconds": 5.003560335986549,
+    "stdout": "put 1    (in buffer: 1)\nput 2    (in buffer: 2)\nput 3    (in buffer: 3)\nput 4    (in buffer: 4)\n",
+    "stderr": ""
+  },
+  {
+    "program": "condvar",
+    "run": 1,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/condvar"
+    ],
+    "returncode": 0,
+    "wall_seconds": 1.0082912920042872,
+    "stdout": "B: not ready, I sleep\nA: message written\nB: I read \"hello\"\n",
+    "stderr": ""
+  },
+  {
+    "program": "condvar",
+    "run": 2,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/condvar"
+    ],
+    "returncode": 0,
+    "wall_seconds": 1.0082292080041952,
+    "stdout": "B: not ready, I sleep\nA: message written\nB: I read \"hello\"\n",
+    "stderr": ""
+  },
+  {
+    "program": "condvar",
+    "run": 3,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/condvar"
+    ],
+    "returncode": 0,
+    "wall_seconds": 1.0086148340196814,
+    "stdout": "B: not ready, I sleep\nA: message written\nB: I read \"hello\"\n",
+    "stderr": ""
+  },
+  {
+    "program": "condvar_if",
+    "run": 1,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/condvar_if"
+    ],
+    "returncode": 0,
+    "wall_seconds": 1.0090737089922186,
+    "stdout": "B: not ready, I sleep\nA: message written\nB: I read \"hello\"\n",
+    "stderr": ""
+  },
+  {
+    "program": "condvar_if",
+    "run": 2,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/condvar_if"
+    ],
+    "returncode": 0,
+    "wall_seconds": 1.0090029170096386,
+    "stdout": "B: not ready, I sleep\nA: message written\nB: I read \"hello\"\n",
+    "stderr": ""
+  },
+  {
+    "program": "condvar_if",
+    "run": 3,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/condvar_if"
+    ],
+    "returncode": 0,
+    "wall_seconds": 1.0062640419928357,
+    "stdout": "B: not ready, I sleep\nA: message written\nB: I read \"hello\"\n",
+    "stderr": ""
+  },
+  {
+    "program": "readers",
+    "run": 1,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/readers"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.6176204170042183,
+    "stdout": "writer 1 writes 10 (alone)\nwriter 1 leaves\nreader 1 reads 10 (readers inside: 1)\nreader 2 reads 10 (readers inside: 2)\nreader 3 reads 10 (readers inside: 3)\nreader 2 leaves (readers inside: 2)\nreader 1 leaves (readers inside: 1)\nreader 3 leaves (readers inside: 0)\nwriter 2 writes 20 (alone)\nwriter 2 leaves\nfinal value: 20; readers remaining: 0\n",
+    "stderr": ""
+  },
+  {
+    "program": "readers",
+    "run": 2,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/readers"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.6137684169807471,
+    "stdout": "writer 1 writes 10 (alone)\nwriter 1 leaves\nreader 1 reads 10 (readers inside: 1)\nreader 2 reads 10 (readers inside: 2)\nreader 3 reads 10 (readers inside: 3)\nreader 1 leaves (readers inside: 2)\nreader 3 leaves (readers inside: 1)\nreader 2 leaves (readers inside: 0)\nwriter 2 writes 20 (alone)\nwriter 2 leaves\nfinal value: 20; readers remaining: 0\n",
+    "stderr": ""
+  },
+  {
+    "program": "readers",
+    "run": 3,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/readers"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.6131697919918224,
+    "stdout": "writer 1 writes 10 (alone)\nwriter 1 leaves\nreader 1 reads 10 (readers inside: 1)\nreader 2 reads 10 (readers inside: 2)\nreader 3 reads 10 (readers inside: 3)\nreader 3 leaves (readers inside: 2)\nreader 2 leaves (readers inside: 1)\nreader 1 leaves (readers inside: 0)\nwriter 2 writes 20 (alone)\nwriter 2 leaves\nfinal value: 20; readers remaining: 0\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_fixed",
+    "run": 1,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_fixed"
+    ],
+    "returncode": 0,
+    "wall_seconds": 2.0087694590038154,
+    "stdout": "one: I have A, I want B\none: I have both\ntwo: I have A, I want B\ntwo: I have both\ndone\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_fixed",
+    "run": 2,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_fixed"
+    ],
+    "returncode": 0,
+    "wall_seconds": 2.012566001008963,
+    "stdout": "one: I have A, I want B\none: I have both\ntwo: I have A, I want B\ntwo: I have both\ndone\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_fixed",
+    "run": 3,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_fixed"
+    ],
+    "returncode": 0,
+    "wall_seconds": 2.013272459007567,
+    "stdout": "one: I have A, I want B\none: I have both\ntwo: I have A, I want B\ntwo: I have both\ndone\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_original",
+    "run": 1,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_original"
+    ],
+    "returncode": 124,
+    "wall_seconds": 5.0050334190018475,
+    "stdout": "one: I have A, I want B\ntwo: I have B, I want A\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 1,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 124,
+    "wall_seconds": 5.005709003016818,
+    "stdout": "one: I have A, I want B\ntwo: I have B, I want A\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 2,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.0027202079945709556,
+    "stdout": "one: I have A, I want B\none: I have both\ntwo: I have B, I want A\ntwo: I have both\ndone\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 3,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 124,
+    "wall_seconds": 5.002986126986798,
+    "stdout": "one: I have A, I want B\ntwo: I have B, I want A\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 4,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.002897041995311156,
+    "stdout": "one: I have A, I want B\none: I have both\ntwo: I have B, I want A\ntwo: I have both\ndone\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 5,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.003205374989192933,
+    "stdout": "one: I have A, I want B\none: I have both\ntwo: I have B, I want A\ntwo: I have both\ndone\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 6,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 124,
+    "wall_seconds": 5.006674628006294,
+    "stdout": "one: I have A, I want B\ntwo: I have B, I want A\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 7,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 124,
+    "wall_seconds": 5.006767460989067,
+    "stdout": "one: I have A, I want B\ntwo: I have B, I want A\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 8,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 124,
+    "wall_seconds": 5.005669961014064,
+    "stdout": "one: I have A, I want B\ntwo: I have B, I want A\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 9,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.0035087920259684324,
+    "stdout": "one: I have A, I want B\none: I have both\ntwo: I have B, I want A\ntwo: I have both\ndone\n",
+    "stderr": ""
+  },
+  {
+    "program": "deadlock_nosleep",
+    "run": 10,
+    "command": [
+      "timeout",
+      "--kill-after=1s",
+      "5s",
+      "/work/lab12/report_files/output/bin/deadlock_nosleep"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.0024003750004339963,
+    "stdout": "one: I have A, I want B\none: I have both\ntwo: I have B, I want A\ntwo: I have both\ndone\n",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,17 @@
+$ timeout 5 ./condvar_if  # run 1
+B: not ready, I sleep
+A: message written
+B: I read "hello"
+exit code: 0
+
+$ timeout 5 ./condvar_if  # run 2
+B: not ready, I sleep
+A: message written
+B: I read "hello"
+exit code: 0
+
+$ timeout 5 ./condvar_if  # run 3
+B: not ready, I sleep
+A: message written
+B: I read "hello"
+exit code: 0

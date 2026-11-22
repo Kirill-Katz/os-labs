@@ -1,0 +1,8 @@
+prodcons #1: peak buffer occupancy 4
+prodcons #2: peak buffer occupancy 4
+prodcons #3: peak buffer occupancy 4
+prodcons_bad #1: peak buffer occupancy 4
+readers #1: peak overlapping reader count 3
+readers #2: peak overlapping reader count 3
+readers #3: peak overlapping reader count 3
+Original without sleeps: 5 completed, 5 timed out

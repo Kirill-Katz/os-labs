@@ -1,0 +1,253 @@
+PASS: prodcons #1: raw output matches record, no error diagnostics
+PASS: prodcons #2: raw output matches record, no error diagnostics
+PASS: prodcons #3: raw output matches record, no error diagnostics
+PASS: prodcons_bad #1: raw output matches record, no error diagnostics
+PASS: condvar #1: raw output matches record, no error diagnostics
+PASS: condvar #2: raw output matches record, no error diagnostics
+PASS: condvar #3: raw output matches record, no error diagnostics
+PASS: condvar_if #1: raw output matches record, no error diagnostics
+PASS: condvar_if #2: raw output matches record, no error diagnostics
+PASS: condvar_if #3: raw output matches record, no error diagnostics
+PASS: readers #1: raw output matches record, no error diagnostics
+PASS: readers #2: raw output matches record, no error diagnostics
+PASS: readers #3: raw output matches record, no error diagnostics
+PASS: deadlock_fixed #1: raw output matches record, no error diagnostics
+PASS: deadlock_fixed #2: raw output matches record, no error diagnostics
+PASS: deadlock_fixed #3: raw output matches record, no error diagnostics
+PASS: deadlock_original #1: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #1: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #2: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #3: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #4: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #5: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #6: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #7: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #8: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #9: raw output matches record, no error diagnostics
+PASS: deadlock_nosleep #10: raw output matches record, no error diagnostics
+PASS: prodcons: 3 executions recorded
+PASS: valid buffer event: put 1    (in buffer: 1)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 2    (in buffer: 2)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 3    (in buffer: 3)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 4    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 1   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 5    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 2   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 6    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 3   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 7    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 4   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 8    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 5   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 6   (in buffer: 2)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 7   (in buffer: 1)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 8   (in buffer: 0)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: prodcons #1: exactly items 1..8 produced/consumed in order, final buffer empty
+PASS: valid buffer event: put 1    (in buffer: 1)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 2    (in buffer: 2)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 3    (in buffer: 3)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 4    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 1   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 5    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 2   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 6    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 3   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 7    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 4   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 8    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 5   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 6   (in buffer: 2)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 7   (in buffer: 1)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 8   (in buffer: 0)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: prodcons #2: exactly items 1..8 produced/consumed in order, final buffer empty
+PASS: valid buffer event: put 1    (in buffer: 1)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 2    (in buffer: 2)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 3    (in buffer: 3)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 4    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 1   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 5    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 2   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 6    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 3   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 7    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 4   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 8    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 5   (in buffer: 3)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 6   (in buffer: 2)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 7   (in buffer: 1)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: take 8   (in buffer: 0)
+PASS: consumer removes oldest item
+PASS: occupancy matches bounded FIFO state
+PASS: prodcons #3: exactly items 1..8 produced/consumed in order, final buffer empty
+PASS: prodcons_bad: 1 executions recorded
+PASS: valid buffer event: put 1    (in buffer: 1)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 2    (in buffer: 2)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 3    (in buffer: 3)
+PASS: occupancy matches bounded FIFO state
+PASS: valid buffer event: put 4    (in buffer: 4)
+PASS: occupancy matches bounded FIFO state
+PASS: wrong producer lock order reaches capacity and times out without completion
+PASS: condvar: 3 executions recorded
+PASS: condvar #1: this run reads hello after writer announcement
+PASS: condvar #2: this run reads hello after writer announcement
+PASS: condvar #3: this run reads hello after writer announcement
+PASS: condvar_if: 3 executions recorded
+PASS: condvar_if #1: this run reads hello after writer announcement
+PASS: condvar_if #2: this run reads hello after writer announcement
+PASS: condvar_if #3: this run reads hello after writer announcement
+PASS: readers: 3 executions recorded
+PASS: writer enters once, with no readers or writer active
+PASS: writer adds exactly ten
+PASS: writer leaves after exclusive interval
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: writer enters once, with no readers or writer active
+PASS: writer adds exactly ten
+PASS: writer leaves after exclusive interval
+PASS: valid final readers/writers summary
+PASS: readers #1: all participants finish with value 20
+PASS: writer enters once, with no readers or writer active
+PASS: writer adds exactly ten
+PASS: writer leaves after exclusive interval
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: writer enters once, with no readers or writer active
+PASS: writer adds exactly ten
+PASS: writer leaves after exclusive interval
+PASS: valid final readers/writers summary
+PASS: readers #2: all participants finish with value 20
+PASS: writer enters once, with no readers or writer active
+PASS: writer adds exactly ten
+PASS: writer leaves after exclusive interval
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader enters once, with no writer active
+PASS: reader sees protected data and accurate occupancy
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: reader leaves after entry
+PASS: reader departure occupancy is accurate
+PASS: writer enters once, with no readers or writer active
+PASS: writer adds exactly ten
+PASS: writer leaves after exclusive interval
+PASS: valid final readers/writers summary
+PASS: readers #3: all participants finish with value 20
+PASS: deadlock_fixed: 3 executions recorded
+PASS: fixed deadlock #1: completes and joins both threads
+PASS: one: fixed acquisition order and both-lock completion logged
+PASS: two: fixed acquisition order and both-lock completion logged
+PASS: fixed deadlock #2: completes and joins both threads
+PASS: one: fixed acquisition order and both-lock completion logged
+PASS: two: fixed acquisition order and both-lock completion logged
+PASS: fixed deadlock #3: completes and joins both threads
+PASS: one: fixed acquisition order and both-lock completion logged
+PASS: two: fixed acquisition order and both-lock completion logged
+PASS: deadlock_original: 1 executions recorded
+PASS: original sleeping version reaches opposite first-lock ownership and timeout 124
+PASS: deadlock_nosleep: 10 executions recorded
+PASS: no-sleep original #1: completion or timeout recorded honestly
+PASS: no-sleep original #2: completion or timeout recorded honestly
+PASS: no-sleep original #3: completion or timeout recorded honestly
+PASS: no-sleep original #4: completion or timeout recorded honestly
+PASS: no-sleep original #5: completion or timeout recorded honestly
+PASS: no-sleep original #6: completion or timeout recorded honestly
+PASS: no-sleep original #7: completion or timeout recorded honestly
+PASS: no-sleep original #8: completion or timeout recorded honestly
+PASS: no-sleep original #9: completion or timeout recorded honestly
+PASS: no-sleep original #10: completion or timeout recorded honestly

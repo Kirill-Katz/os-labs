@@ -1,0 +1,379 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\definecolor{codegray}{RGB}{245,245,245}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,
+  breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educa\c{t}iei \c{s}i Cercet\u{a}rii al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnic\u{a} a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatic\u{a} \c{s}i Microelectronic\u{a}\par}
+\vspace{0.45cm}
+{\large Departamentul Ingineria Software \c{s}i Automatic\u{a}\par}
+\vspace{3cm}
+{\Large\bfseries Report on Laboratory Work No. 12\par}
+\vspace{0.55cm}
+{\LARGE\bfseries Producer, Consumer and the Other Tools\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Ca\c{t} Chiril\\[0.8cm]
+\textbf{Checked by:} asist. univ. Rei\c{t}man Patricia
+\end{flushleft}
+\vfill
+{Chi\c{s}in\u{a}u -- 2026\par}
+\end{titlepage}
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Aim, environment, and deliverables}
+Lab 11 used a semaphore as a lock, a signal, or a resource counter.
+This lab combines synchronization tools: a bounded producer/consumer FIFO,
+a condition variable paired with a predicate, a reader-preference
+readers/writers algorithm, and a two-lock deadlock followed by its repair.
+All four required parts are complete.
+
+The programs ran on Ubuntu 24.04.5 LTS on aarch64, using GCC 13.3.0 and
+POSIX threads. All eight configurations compiled successfully with
+\texttt{-std=c11 -Wall -Wextra -Werror -O0 -pthread}. There were
+\textbf{27 executions}: three per correct program, three for the
+condition-variable \texttt{if} variation, one each for the two sleeping
+broken configurations, and ten original deadlock runs without sleeps.
+
+The required files are \texttt{prodcons.c}, \texttt{condvar.c},
+\texttt{readers.c}, and the \textbf{fixed} \texttt{deadlock.c}, under
+\texttt{lab12/code/}. The companion \texttt{thread\_utils.h} checks pthread
+error codes and semaphore failures, including interrupted waits. Workers
+are joined before synchronization objects are destroyed. Stable ID arrays
+replace integer-to-pointer casts in the readers/writers example.
+The required \texttt{report.md} contains all twelve Observe answers.
+This PDF and its editable source follow the previous laboratory reports.
+Original output, exit codes, build records, and verification are retained
+under \path{lab12/report_files/output/}.
+
+Correct versions are the defaults. Separate compiler definitions create
+the experiments without leaving the submitted sources broken:
+\begin{lstlisting}
+# From the repository root, on Ubuntu:
+gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread \
+  -o /tmp/prodcons lab12/code/prodcons.c
+# Variations (use separate output binary names):
+# prodcons.c: -DBAD_LOCK_ORDER=1
+# condvar.c:  -DUSE_IF=1
+# deadlock.c: -DOPPOSITE_ORDER=1
+# deadlock.c: -DOPPOSITE_ORDER=1 -DDELAY_SECONDS=0
+\end{lstlisting}
+I used \texttt{timeout 5} to bound each deadlock experiment, with a
+one-second forced-kill fallback in the automated runner. Exit 124 means
+the timeout expired, not that the program completed. Output is line
+buffered so messages already printed are retained when a broken process
+is stopped. No indefinite background process was left running.
+
+\clearpage
+\section{Part 1: producer and consumer}
+\subsection{A bounded circular FIFO}
+The buffer has four slots and carries eight items. \texttt{empty} starts
+at 4, \texttt{full} at 0. The mutex protects the buffer, indices, and
+occupancy. Each worker waits for a resource permit \emph{before} acquiring
+the mutex, updates the circular buffer, unlocks, and posts the opposite
+semaphore. The indices wrap with modulo \texttt{SIZE}.
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/prodcons-1.stdout}
+All three correct runs reached occupancy four, consumed exactly items
+1--8 in FIFO order, and finished empty. A different interleaving would
+also be valid. This is the same bounded producer/consumer concept found
+in pipes, not a claim that a kernel pipe uses these exact POSIX objects.
+
+\subsection{The wrong order creates a deadlock}
+I built the altered producer with \texttt{-DBAD\_LOCK\_ORDER=1}:
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/prodcons_bad.txt}
+After filling the buffer, the producer holds the mutex while waiting for
+an empty permit. The consumer needs that mutex to remove an item and post
+such a permit. The circular dependency prevents either thread from making
+progress. The final source restores wait-before-lock; a timeout is used
+only to terminate the deliberate broken experiment.
+
+\clearpage
+\section{Part 2: the condition variable}
+\subsection{The predicate is the remembered state}
+The ordinary integer \texttt{ready} is the condition, protected by
+\texttt{lock}. The writer copies the message, sets \texttt{ready = 1},
+and signals while holding that mutex. The reader checks the predicate
+under the same mutex and waits in a loop:
+\begin{lstlisting}[language=C]
+pthread_mutex_lock(&lock);
+while (!ready) {
+    printf("B: not ready, I sleep\n");
+    pthread_cond_wait(&changed, &lock);
+}
+printf("B: I read \"%s\"\n", message);
+pthread_mutex_unlock(&lock);
+\end{lstlisting}
+This excerpt omits the checked-call wrappers. The wait atomically releases
+the mutex and waits, then reacquires it before returning. This allows the
+writer to acquire the lock while the reader sleeps and avoids a missed
+notification between testing the predicate and starting the wait.
+
+All three correct runs produced:
+\lstinputlisting{output/condvar-1.stdout}
+If the writer finishes before the reader waits, the reader sees
+\texttt{ready == 1} and skips waiting. A condition-variable signal is not
+a stored permit; \texttt{ready} preserves the state even if nobody was
+waiting when the signal occurred.
+
+\subsection{The if variation works here, but is not the general rule}
+The separately compiled \texttt{-DUSE\_IF=1} variant replaced the loop
+with a single \texttt{if}. All three runs also printed:
+\lstinputlisting{output/condvar_if-1.stdout}
+No unwanted wakeup was exposed by these simple one-reader/one-writer runs.
+A condition wait may nevertheless return spuriously while the predicate
+is false. With more consumers, another thread might consume a resource
+before a woken waiter reacquires the mutex. The correct pattern therefore
+rechecks the actual predicate in a \texttt{while} loop. This experiment
+did not force or claim to observe a spurious wakeup. The submitted default
+retains the loop.
+
+\clearpage
+\section{Part 3: readers and writers}
+\subsection{One permit for the whole reader group}
+The first reader acquires \texttt{room}; the last reader releases it.
+\texttt{rlock} serializes changes to the reader count and the associated
+first/last decisions:
+\begin{lstlisting}[language=C]
+/* Reader entry, while holding rlock */
+if (++readers == 1)
+    sem_wait_checked(&room);
+/* Reader departure, while holding rlock */
+if (--readers == 0)
+    sem_post(&room);
+\end{lstlisting}
+Each writer must acquire the same room permit and keep it throughout its
+update and simulated work. Other readers join an active reader group
+without acquiring room again. The 200 ms reading intervals remain outside
+\texttt{rlock}, so readers can genuinely overlap.
+
+One recorded run was:
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/readers-1.stdout}
+Each of three runs reached three overlapping readers. The retained event
+trace showed no writer overlapping a reader or another writer. Both writes
+added ten, leaving value 20 and reader count zero. Which writer runs first
+is not a general guarantee.
+
+\subsection{Diagnostic safety and writer starvation}
+The handout reads \texttt{readers} in a print outside \texttt{rlock} while
+other readers may update it, introducing a diagnostic data race. I moved
+that print into the protected region. Additional departure records let
+the verifier reconstruct complete active intervals, rather than assuming
+a label such as ``alone'' proves exclusivity.
+
+This algorithm gives preference to readers. If new readers keep joining
+before the last active reader leaves, the count never reaches zero and a
+writer can wait indefinitely: \textbf{writer starvation}. Readers may
+still make progress, so this is not the circular-wait deadlock of Part 4.
+The finite test finishes both writers; it does not establish fairness
+under an unending arrival stream.
+
+\clearpage
+\section{Part 4: building and removing a deadlock}
+\subsection{Opposite lock order}
+In the original version, worker one takes A then B, while worker two takes
+B then A. Both sleep after acquiring their first lock. The actual run was:
+\lstinputlisting{output/deadlock_original.txt}
+One holds A and waits for B; two holds B and waits for A. The wait-for
+cycle is \(\text{one} \to \text{two} \to \text{one}\).
+The source and ownership messages explain the circular wait; the timeout
+alone would not establish the cause of a hang.
+
+\subsection{The submitted repair: A before B everywhere}
+Both workers now acquire A then B and release B then A. All three fixed
+runs completed normally. One run produced:
+\lstinputlisting{output/deadlock_fixed-1.stdout}
+\begin{lstlisting}
+exit code: 0
+\end{lstlisting}
+Worker two's message now accurately states that it holds A. The handout's
+fixed sample retains an outdated ``I have B'' label. Either worker can
+acquire A first in another schedule; the essential property is the common
+lock order, not which worker starts first.
+
+\subsection{Removing sleeps does not fix the original}
+I compiled out both sleeps while retaining opposite lock order and ran
+that binary ten times under a five-second timeout:
+\begin{center}
+\begin{tabular}{lrrrrrrrrrr}
+\toprule
+Run & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\
+\midrule
+Exit code & 124 & 0 & 124 & 0 & 0 & 124 & 124 & 124 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Five completed and five timed out.} A worker sometimes acquires both
+locks before its peer establishes the cycle. Other schedules still
+produce deadlock. This is harder to diagnose, not a repair: successful
+runs hide a timing-dependent defect. Ten outcomes are not a measured
+failure probability or a portable failure rate.
+
+\clearpage
+\section{Handout questions and answers}
+\subsection{Part 1: producer and consumer}
+\begin{enumerate}
+\Needspace{7\baselineskip}
+\item \textbf{Question:} The producer is fast, yet ``in buffer'' never goes above 4. Which call stops it?
+\par\textbf{Answer:} \texttt{sem\_wait(\&empty)}, through
+\texttt{sem\_wait\_checked}, blocks when no free-slot permit remains.
+Four initial permits and balanced consumer posts enforce the capacity;
+a mutex alone would not prevent overflow.
+
+\Needspace{7\baselineskip}
+\item \textbf{Question:} Who waits at the start: the consumer or the producer? Which call makes it wait?
+\par\textbf{Answer:} The consumer waits at \texttt{sem\_wait(\&full)}
+when the buffer is still empty, because full starts at zero. The producer
+initially has four empty permits. If it produces first, a full permit may
+already be available when the consumer reaches wait.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Lock the producer's mutex before sem\_wait(\&empty). What happens when the buffer is full, and why?
+\par\textbf{Answer:} The altered run filled four slots and timed out with
+exit 124. The producer holds the mutex and waits for an empty slot; the
+consumer needs the mutex to remove an item and post an empty permit.
+Each is waiting for progress that the other cannot make.
+\end{enumerate}
+
+\subsection{Part 2: the condition variable}
+\begin{enumerate}
+\Needspace{7\baselineskip}
+\item \textbf{Question:} In Lab 11 the semaphore remembered that the message was ready. Here, which variable remembers it?
+\par\textbf{Answer:} \texttt{ready}, an integer protected by the mutex.
+The condition variable is a place to wait for possible changes, not a
+stored readiness permit.
+
+\Needspace{7\baselineskip}
+\item \textbf{Question:} Replace while (!ready) with if (!ready), compile, run. Does it still work here?
+\par\textbf{Answer:} Yes, all three altered runs read hello after the
+writer's announcement. Those runs did not expose an unwanted wakeup and
+do not make a one-time test the correct general pattern.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Why write while? Give one reason a thread can wake up and still find ready == 0.
+\par\textbf{Answer:} A POSIX condition wait can return spuriously before
+the predicate becomes true. More generally another consumer may change
+state before the waiter reacquires the mutex. The loop rechecks the
+predicate under its lock and waits again when necessary.
+\end{enumerate}
+
+\Needspace{12\baselineskip}
+\subsection{Part 3: readers and writers}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Three readers are inside together, but a writer is always alone. Which two lines of reader() make that possible?
+\par\textbf{Answer:} The first-reader \texttt{sem\_wait(\&room)} and
+last-reader \texttt{sem\_post(\&room)} calls are guarded by
+\texttt{++readers == 1} and \texttt{--readers == 0}, respectively. They
+hold room for the whole group. Writers need that same permit, while
+later readers can join the active group.
+
+\Needspace{7\baselineskip}
+\item \textbf{Question:} Why does readers need its own lock, rlock? What could go wrong without it?
+\par\textbf{Answer:} Updates and first/last-reader decisions must be
+serialized. Lost updates or inconsistent first/last decisions could
+fail to release room, or release it while a reader remains. The printed
+snapshot of the count must also be protected.
+
+\Needspace{7\baselineskip}
+\item \textbf{Question:} Readers keep arriving without a pause. What happens to writer 2?
+\par\textbf{Answer:} It may starve. If the active reader count never
+reaches zero, the group never releases room. Reader preference does not
+guarantee bounded waiting for a writer, even though this finite test ends.
+\end{enumerate}
+
+\subsection{Part 4: deadlock}
+\begin{enumerate}
+\Needspace{9\baselineskip}
+\item \textbf{Question:} In the stuck run, which worker holds which mutex, and which does each wait for? Draw the circle.
+\par\textbf{Answer:} One holds A and waits for B; two holds B and waits
+for A. The resource cycle is:
+\[
+\begin{array}{ccc}
+\text{one} & \xrightarrow{\text{waits for}} & B \\
+\scriptstyle\text{held by}\ \uparrow & & \downarrow\ \scriptstyle\text{held by} \\
+A & \xleftarrow{\text{waits for}} & \text{two}
+\end{array}
+\]
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Remove both sleeps from the original and run ten times. Does it still always hang? Why is that worse, not better?
+\par\textbf{Answer:} No: five completed and five timed out. The lock-order
+bug remains, but depends on interleaving. An intermittent failure can
+escape testing and be harder to reproduce than an obvious consistent hang.
+
+\Needspace{7\baselineskip}
+\item \textbf{Question:} In one sentence, why can taking the locks in the same order never deadlock?
+\par\textbf{Answer:} For these two locks, requiring A before B prevents
+circular wait because no worker can hold B while waiting to acquire A.
+This removes this lock-order deadlock, not every possible unrelated wait.
+\end{enumerate}
+
+\clearpage
+\section{Verification and conclusion}
+\subsection{Results and evidence}
+The retained verifier passed \textbf{253 assertions across 27 executions}.
+It reconstructs state from events, rather than requiring the sample's
+exact scheduling order:
+\begin{itemize}
+\item Every correct producer/consumer run produced and consumed items
+1--8 exactly once in FIFO order. Every occupancy matched the modeled queue,
+stayed within 0--4, and ended at zero.
+\item The altered producer reached capacity and timed out with 124. The
+ordinary producer/consumer runs all exited normally.
+\item Both condition-variable configurations read hello after the writer's
+announcement in their three runs. No spurious wakeup was claimed or
+injected; the reason for the loop follows from condition-wait semantics.
+\item Entry and departure events showed multiple readers concurrently,
+no reader/writer or writer/writer overlap, accurate reader counts, and
+final shared value 20 after two writes.
+\item The original sleeping deadlock printed both first-lock ownership
+messages and timed out. All three fixed runs joined both workers and
+printed done. Each of ten no-sleep original outcomes was preserved,
+including both successes and hangs.
+\end{itemize}
+Raw stdout and stderr agree with the machine-readable records. The
+runner treats unexpected errors or timeouts in correct configurations
+as failures. Every deliberate hang was bounded and terminated; no thread
+was silently left running. Timing records describe observations, not
+correctness thresholds or estimated scheduling probabilities.
+
+\subsection{What the experiments establish}
+The synchronization design supplies the safety argument; repeated runs
+support it but do not exhaust all schedules. In particular, three working
+\texttt{if} runs do not disprove spurious wakeups, and two completed writers
+do not establish starvation freedom under continuous reader arrivals.
+The protected diagnostic snapshot avoids adding an unrelated data race to
+the readers/writers program.
+
+The combined examples illustrate distinct responsibilities. Semaphores
+count empty/full slots and hold a room for a reader group; a mutex protects
+state updates; a condition variable waits for a predicate protected by its
+mutex. Consistent lock ordering removes the circular wait between A and B.
+Removing sleeps changes only the chance of exposing that cycle, not the
+underlying correctness of the original program.
+\end{document}

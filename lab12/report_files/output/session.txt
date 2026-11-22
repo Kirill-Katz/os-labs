@@ -1,0 +1,36 @@
+prodcons #1: exit 0, 2.420952 seconds
+prodcons #2: exit 0, 2.434003 seconds
+prodcons #3: exit 0, 2.432822 seconds
+prodcons_bad #1: exit 124, 5.003560 seconds
+condvar #1: exit 0, 1.008291 seconds
+condvar #2: exit 0, 1.008229 seconds
+condvar #3: exit 0, 1.008615 seconds
+condvar_if #1: exit 0, 1.009074 seconds
+condvar_if #2: exit 0, 1.009003 seconds
+condvar_if #3: exit 0, 1.006264 seconds
+readers #1: exit 0, 0.617620 seconds
+readers #2: exit 0, 0.613768 seconds
+readers #3: exit 0, 0.613170 seconds
+deadlock_fixed #1: exit 0, 2.008769 seconds
+deadlock_fixed #2: exit 0, 2.012566 seconds
+deadlock_fixed #3: exit 0, 2.013272 seconds
+deadlock_original #1: exit 124, 5.005033 seconds
+deadlock_nosleep #1: exit 124, 5.005709 seconds
+deadlock_nosleep #2: exit 0, 0.002720 seconds
+deadlock_nosleep #3: exit 124, 5.002986 seconds
+deadlock_nosleep #4: exit 0, 0.002897 seconds
+deadlock_nosleep #5: exit 0, 0.003205 seconds
+deadlock_nosleep #6: exit 124, 5.006675 seconds
+deadlock_nosleep #7: exit 124, 5.006767 seconds
+deadlock_nosleep #8: exit 124, 5.005670 seconds
+deadlock_nosleep #9: exit 0, 0.003509 seconds
+deadlock_nosleep #10: exit 0, 0.002400 seconds
+All 253 assertions passed across 27 executions.
+prodcons #1: peak buffer occupancy 4
+prodcons #2: peak buffer occupancy 4
+prodcons #3: peak buffer occupancy 4
+prodcons_bad #1: peak buffer occupancy 4
+readers #1: peak overlapping reader count 3
+readers #2: peak overlapping reader count 3
+readers #3: peak overlapping reader count 3
+Original without sleeps: 5 completed, 5 timed out

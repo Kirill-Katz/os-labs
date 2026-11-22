@@ -1,0 +1,23 @@
+$ timeout 5 ./deadlock_fixed  # run 1
+one: I have A, I want B
+one: I have both
+two: I have A, I want B
+two: I have both
+done
+exit code: 0
+
+$ timeout 5 ./deadlock_fixed  # run 2
+one: I have A, I want B
+one: I have both
+two: I have A, I want B
+two: I have both
+done
+exit code: 0
+
+$ timeout 5 ./deadlock_fixed  # run 3
+one: I have A, I want B
+one: I have both
+two: I have A, I want B
+two: I have both
+done
+exit code: 0

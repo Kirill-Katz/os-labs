@@ -1,0 +1,8 @@
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab12/report_files/output/bin/prodcons /work/lab12/code/prodcons.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -DBAD_LOCK_ORDER=1 -o /work/lab12/report_files/output/bin/prodcons_bad /work/lab12/code/prodcons.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab12/report_files/output/bin/condvar /work/lab12/code/condvar.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -DUSE_IF=1 -o /work/lab12/report_files/output/bin/condvar_if /work/lab12/code/condvar.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab12/report_files/output/bin/readers /work/lab12/code/readers.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab12/report_files/output/bin/deadlock_fixed /work/lab12/code/deadlock.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -DOPPOSITE_ORDER=1 -o /work/lab12/report_files/output/bin/deadlock_original /work/lab12/code/deadlock.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -DOPPOSITE_ORDER=1 -DDELAY_SECONDS=0 -o /work/lab12/report_files/output/bin/deadlock_nosleep /work/lab12/code/deadlock.c
