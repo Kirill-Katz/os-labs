@@ -1,0 +1,395 @@
+PASS: race #1: successful exit without diagnostics
+PASS: race #1: raw stdout matches record
+PASS: race #2: successful exit without diagnostics
+PASS: race #2: raw stdout matches record
+PASS: race #3: successful exit without diagnostics
+PASS: race #3: raw stdout matches record
+PASS: mutex #1: successful exit without diagnostics
+PASS: mutex #1: raw stdout matches record
+PASS: mutex #2: successful exit without diagnostics
+PASS: mutex #2: raw stdout matches record
+PASS: mutex #3: successful exit without diagnostics
+PASS: mutex #3: raw stdout matches record
+PASS: sem #1: successful exit without diagnostics
+PASS: sem #1: raw stdout matches record
+PASS: sem #2: successful exit without diagnostics
+PASS: sem #2: raw stdout matches record
+PASS: sem #3: successful exit without diagnostics
+PASS: sem #3: raw stdout matches record
+PASS: sem_two #1: successful exit without diagnostics
+PASS: sem_two #1: raw stdout matches record
+PASS: sem_two #2: successful exit without diagnostics
+PASS: sem_two #2: raw stdout matches record
+PASS: sem_two #3: successful exit without diagnostics
+PASS: sem_two #3: raw stdout matches record
+PASS: order #1: successful exit without diagnostics
+PASS: order #1: raw stdout matches record
+PASS: order #2: successful exit without diagnostics
+PASS: order #2: raw stdout matches record
+PASS: order #3: successful exit without diagnostics
+PASS: order #3: raw stdout matches record
+PASS: order_one #1: successful exit without diagnostics
+PASS: order_one #1: raw stdout matches record
+PASS: order_one #2: successful exit without diagnostics
+PASS: order_one #2: raw stdout matches record
+PASS: order_one #3: successful exit without diagnostics
+PASS: order_one #3: raw stdout matches record
+PASS: parking #1: successful exit without diagnostics
+PASS: parking #1: raw stdout matches record
+PASS: parking #2: successful exit without diagnostics
+PASS: parking #2: raw stdout matches record
+PASS: parking #3: successful exit without diagnostics
+PASS: parking #3: raw stdout matches record
+PASS: parking_one #1: successful exit without diagnostics
+PASS: parking_one #1: raw stdout matches record
+PASS: parking_one #2: successful exit without diagnostics
+PASS: parking_one #2: raw stdout matches record
+PASS: parking_one #3: successful exit without diagnostics
+PASS: parking_one #3: raw stdout matches record
+PASS: atomic #1: successful exit without diagnostics
+PASS: atomic #1: raw stdout matches record
+PASS: atomic #2: successful exit without diagnostics
+PASS: atomic #2: raw stdout matches record
+PASS: atomic #3: successful exit without diagnostics
+PASS: atomic #3: raw stdout matches record
+PASS: race: at least three runs recorded
+PASS: race #1: expected output format
+PASS: race #2: expected output format
+PASS: race #3: expected output format
+PASS: race: observed an incorrect result
+PASS: sem_two: at least three runs recorded
+PASS: sem_two #1: expected output format
+PASS: sem_two #2: expected output format
+PASS: sem_two #3: expected output format
+PASS: sem_two: observed an incorrect result
+PASS: mutex: at least three runs recorded
+PASS: mutex #1: expected output format
+PASS: mutex #2: expected output format
+PASS: mutex #3: expected output format
+PASS: mutex: every run reached exactly 2000000
+PASS: sem: at least three runs recorded
+PASS: sem #1: expected output format
+PASS: sem #2: expected output format
+PASS: sem #3: expected output format
+PASS: sem: every run reached exactly 2000000
+PASS: atomic: at least three runs recorded
+PASS: atomic #1: expected output format
+PASS: atomic #2: expected output format
+PASS: atomic #3: expected output format
+PASS: atomic: every run reached exactly 2000000
+PASS: order: at least three runs recorded
+PASS: order #1: read hello only after writer announcement
+PASS: order #2: read hello only after writer announcement
+PASS: order #3: read hello only after writer announcement
+PASS: order_one: at least three runs recorded
+PASS: order_one #1: altered-start experiment completed
+PASS: order_one #2: altered-start experiment completed
+PASS: order_one #3: altered-start experiment completed
+PASS: parking: at least three runs recorded
+PASS: parking #1: exactly twelve events
+PASS: parking #1: valid event: car 1 enters (inside: 1)
+PASS: valid car ID
+PASS: car 1 enters once
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 3 enters (inside: 2)
+PASS: valid car ID
+PASS: car 3 enters once
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 2 enters (inside: 3)
+PASS: valid car ID
+PASS: car 2 enters once
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 2 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 2 leaves only after entering
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 4 enters (inside: 3)
+PASS: valid car ID
+PASS: car 4 enters once
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 1 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 1 leaves only after entering
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 5 enters (inside: 3)
+PASS: valid car ID
+PASS: car 5 enters once
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 3 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 3 leaves only after entering
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 6 enters (inside: 3)
+PASS: valid car ID
+PASS: car 6 enters once
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 4 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 4 leaves only after entering
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 5 leaves (inside: 1)
+PASS: valid car ID
+PASS: car 5 leaves only after entering
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: valid event: car 6 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 6 leaves only after entering
+PASS: parking #1: occupancy agrees with events and capacity
+PASS: parking #1: all six cars leave and occupancy returns to zero
+OBSERVED: parking #1 maximum occupancy 3
+PASS: parking #2: exactly twelve events
+PASS: parking #2: valid event: car 1 enters (inside: 1)
+PASS: valid car ID
+PASS: car 1 enters once
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 2 enters (inside: 2)
+PASS: valid car ID
+PASS: car 2 enters once
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 3 enters (inside: 3)
+PASS: valid car ID
+PASS: car 3 enters once
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 2 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 2 leaves only after entering
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 1 leaves (inside: 1)
+PASS: valid car ID
+PASS: car 1 leaves only after entering
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 4 enters (inside: 2)
+PASS: valid car ID
+PASS: car 4 enters once
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 5 enters (inside: 3)
+PASS: valid car ID
+PASS: car 5 enters once
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 3 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 3 leaves only after entering
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 6 enters (inside: 3)
+PASS: valid car ID
+PASS: car 6 enters once
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 5 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 5 leaves only after entering
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 4 leaves (inside: 1)
+PASS: valid car ID
+PASS: car 4 leaves only after entering
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: valid event: car 6 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 6 leaves only after entering
+PASS: parking #2: occupancy agrees with events and capacity
+PASS: parking #2: all six cars leave and occupancy returns to zero
+OBSERVED: parking #2 maximum occupancy 3
+PASS: parking #3: exactly twelve events
+PASS: parking #3: valid event: car 1 enters (inside: 1)
+PASS: valid car ID
+PASS: car 1 enters once
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 2 enters (inside: 2)
+PASS: valid car ID
+PASS: car 2 enters once
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 3 enters (inside: 3)
+PASS: valid car ID
+PASS: car 3 enters once
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 3 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 3 leaves only after entering
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 4 enters (inside: 3)
+PASS: valid car ID
+PASS: car 4 enters once
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 1 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 1 leaves only after entering
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 5 enters (inside: 3)
+PASS: valid car ID
+PASS: car 5 enters once
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 2 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 2 leaves only after entering
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 6 enters (inside: 3)
+PASS: valid car ID
+PASS: car 6 enters once
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 4 leaves (inside: 2)
+PASS: valid car ID
+PASS: car 4 leaves only after entering
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 5 leaves (inside: 1)
+PASS: valid car ID
+PASS: car 5 leaves only after entering
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: valid event: car 6 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 6 leaves only after entering
+PASS: parking #3: occupancy agrees with events and capacity
+PASS: parking #3: all six cars leave and occupancy returns to zero
+OBSERVED: parking #3 maximum occupancy 3
+PASS: parking_one: at least three runs recorded
+PASS: parking_one #1: exactly twelve events
+PASS: parking_one #1: valid event: car 1 enters (inside: 1)
+PASS: valid car ID
+PASS: car 1 enters once
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 1 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 1 leaves only after entering
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 2 enters (inside: 1)
+PASS: valid car ID
+PASS: car 2 enters once
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 2 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 2 leaves only after entering
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 3 enters (inside: 1)
+PASS: valid car ID
+PASS: car 3 enters once
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 3 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 3 leaves only after entering
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 4 enters (inside: 1)
+PASS: valid car ID
+PASS: car 4 enters once
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 4 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 4 leaves only after entering
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 5 enters (inside: 1)
+PASS: valid car ID
+PASS: car 5 enters once
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 5 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 5 leaves only after entering
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 6 enters (inside: 1)
+PASS: valid car ID
+PASS: car 6 enters once
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: valid event: car 6 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 6 leaves only after entering
+PASS: parking_one #1: occupancy agrees with events and capacity
+PASS: parking_one #1: all six cars leave and occupancy returns to zero
+OBSERVED: parking_one #1 maximum occupancy 1
+PASS: parking_one #2: exactly twelve events
+PASS: parking_one #2: valid event: car 1 enters (inside: 1)
+PASS: valid car ID
+PASS: car 1 enters once
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 1 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 1 leaves only after entering
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 2 enters (inside: 1)
+PASS: valid car ID
+PASS: car 2 enters once
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 2 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 2 leaves only after entering
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 3 enters (inside: 1)
+PASS: valid car ID
+PASS: car 3 enters once
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 3 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 3 leaves only after entering
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 4 enters (inside: 1)
+PASS: valid car ID
+PASS: car 4 enters once
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 4 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 4 leaves only after entering
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 5 enters (inside: 1)
+PASS: valid car ID
+PASS: car 5 enters once
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 5 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 5 leaves only after entering
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 6 enters (inside: 1)
+PASS: valid car ID
+PASS: car 6 enters once
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: valid event: car 6 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 6 leaves only after entering
+PASS: parking_one #2: occupancy agrees with events and capacity
+PASS: parking_one #2: all six cars leave and occupancy returns to zero
+OBSERVED: parking_one #2 maximum occupancy 1
+PASS: parking_one #3: exactly twelve events
+PASS: parking_one #3: valid event: car 1 enters (inside: 1)
+PASS: valid car ID
+PASS: car 1 enters once
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 1 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 1 leaves only after entering
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 2 enters (inside: 1)
+PASS: valid car ID
+PASS: car 2 enters once
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 2 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 2 leaves only after entering
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 3 enters (inside: 1)
+PASS: valid car ID
+PASS: car 3 enters once
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 3 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 3 leaves only after entering
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 4 enters (inside: 1)
+PASS: valid car ID
+PASS: car 4 enters once
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 4 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 4 leaves only after entering
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 5 enters (inside: 1)
+PASS: valid car ID
+PASS: car 5 enters once
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 5 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 5 leaves only after entering
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 6 enters (inside: 1)
+PASS: valid car ID
+PASS: car 6 enters once
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: valid event: car 6 leaves (inside: 0)
+PASS: valid car ID
+PASS: car 6 leaves only after entering
+PASS: parking_one #3: occupancy agrees with events and capacity
+PASS: parking_one #3: all six cars leave and occupancy returns to zero
+OBSERVED: parking_one #3 maximum occupancy 1

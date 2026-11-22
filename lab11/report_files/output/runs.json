@@ -1,0 +1,245 @@
+[
+  {
+    "program": "race",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 0.004461750009795651,
+    "stdout": "counter = 1027667 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "race",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 0.004462834011064842,
+    "stdout": "counter = 1029921 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "race",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 0.004459666000911966,
+    "stdout": "counter = 1062160 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "mutex",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 0.05573720901156776,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.05 user_s=0.07 system_s=0.02"
+  },
+  {
+    "program": "mutex",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 0.05600083398167044,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.05 user_s=0.07 system_s=0.02"
+  },
+  {
+    "program": "mutex",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 0.058797082980163395,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.05 user_s=0.07 system_s=0.03"
+  },
+  {
+    "program": "sem",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 0.1317394170037005,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.12 user_s=0.20 system_s=0.05"
+  },
+  {
+    "program": "sem",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 0.17254500000854023,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.17 user_s=0.24 system_s=0.08"
+  },
+  {
+    "program": "sem",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 0.14206433299113996,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.13 user_s=0.21 system_s=0.06"
+  },
+  {
+    "program": "sem_two",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 0.0980695839971304,
+    "stdout": "counter = 1791203 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.09 user_s=0.18 system_s=0.00"
+  },
+  {
+    "program": "sem_two",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 0.10709379200125113,
+    "stdout": "counter = 1709203 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.10 user_s=0.20 system_s=0.00"
+  },
+  {
+    "program": "sem_two",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 0.09577004201128148,
+    "stdout": "counter = 1844541 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.09 user_s=0.17 system_s=0.00"
+  },
+  {
+    "program": "order",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 1.0044712089875247,
+    "stdout": "B: waiting for the message...\nA: message written\nB: I read \"hello\"\n",
+    "stderr": "",
+    "time": "real_s=1.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "order",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 1.0107047499914188,
+    "stdout": "B: waiting for the message...\nA: message written\nB: I read \"hello\"\n",
+    "stderr": "",
+    "time": "real_s=1.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "order",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 1.0058898749994114,
+    "stdout": "B: waiting for the message...\nA: message written\nB: I read \"hello\"\n",
+    "stderr": "",
+    "time": "real_s=1.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "order_one",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 1.006558792985743,
+    "stdout": "B: waiting for the message...\nB: I read \"\"\nA: message written\n",
+    "stderr": "",
+    "time": "real_s=1.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "order_one",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 1.0109358330082614,
+    "stdout": "B: waiting for the message...\nB: I read \"\"\nA: message written\n",
+    "stderr": "",
+    "time": "real_s=1.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "order_one",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 1.0077945010270923,
+    "stdout": "B: waiting for the message...\nB: I read \"\"\nA: message written\n",
+    "stderr": "",
+    "time": "real_s=1.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "parking",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 2.0122266259859316,
+    "stdout": "car 1 enters (inside: 1)\ncar 3 enters (inside: 2)\ncar 2 enters (inside: 3)\ncar 2 leaves (inside: 2)\ncar 4 enters (inside: 3)\ncar 1 leaves (inside: 2)\ncar 5 enters (inside: 3)\ncar 3 leaves (inside: 2)\ncar 6 enters (inside: 3)\ncar 4 leaves (inside: 2)\ncar 5 leaves (inside: 1)\ncar 6 leaves (inside: 0)\n",
+    "stderr": "",
+    "time": "real_s=2.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "parking",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 2.0101617089821957,
+    "stdout": "car 1 enters (inside: 1)\ncar 2 enters (inside: 2)\ncar 3 enters (inside: 3)\ncar 2 leaves (inside: 2)\ncar 1 leaves (inside: 1)\ncar 4 enters (inside: 2)\ncar 5 enters (inside: 3)\ncar 3 leaves (inside: 2)\ncar 6 enters (inside: 3)\ncar 5 leaves (inside: 2)\ncar 4 leaves (inside: 1)\ncar 6 leaves (inside: 0)\n",
+    "stderr": "",
+    "time": "real_s=2.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "parking",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 2.0107101679896004,
+    "stdout": "car 1 enters (inside: 1)\ncar 2 enters (inside: 2)\ncar 3 enters (inside: 3)\ncar 3 leaves (inside: 2)\ncar 4 enters (inside: 3)\ncar 1 leaves (inside: 2)\ncar 5 enters (inside: 3)\ncar 2 leaves (inside: 2)\ncar 6 enters (inside: 3)\ncar 4 leaves (inside: 2)\ncar 5 leaves (inside: 1)\ncar 6 leaves (inside: 0)\n",
+    "stderr": "",
+    "time": "real_s=2.00 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "parking_one",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 6.016449168993859,
+    "stdout": "car 1 enters (inside: 1)\ncar 1 leaves (inside: 0)\ncar 2 enters (inside: 1)\ncar 2 leaves (inside: 0)\ncar 3 enters (inside: 1)\ncar 3 leaves (inside: 0)\ncar 4 enters (inside: 1)\ncar 4 leaves (inside: 0)\ncar 5 enters (inside: 1)\ncar 5 leaves (inside: 0)\ncar 6 enters (inside: 1)\ncar 6 leaves (inside: 0)\n",
+    "stderr": "",
+    "time": "real_s=6.01 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "parking_one",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 6.025397585995961,
+    "stdout": "car 1 enters (inside: 1)\ncar 1 leaves (inside: 0)\ncar 2 enters (inside: 1)\ncar 2 leaves (inside: 0)\ncar 3 enters (inside: 1)\ncar 3 leaves (inside: 0)\ncar 4 enters (inside: 1)\ncar 4 leaves (inside: 0)\ncar 5 enters (inside: 1)\ncar 5 leaves (inside: 0)\ncar 6 enters (inside: 1)\ncar 6 leaves (inside: 0)\n",
+    "stderr": "",
+    "time": "real_s=6.02 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "parking_one",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 6.03428400302073,
+    "stdout": "car 1 enters (inside: 1)\ncar 1 leaves (inside: 0)\ncar 2 enters (inside: 1)\ncar 2 leaves (inside: 0)\ncar 3 enters (inside: 1)\ncar 3 leaves (inside: 0)\ncar 4 enters (inside: 1)\ncar 4 leaves (inside: 0)\ncar 5 enters (inside: 1)\ncar 5 leaves (inside: 0)\ncar 6 enters (inside: 1)\ncar 6 leaves (inside: 0)\n",
+    "stderr": "",
+    "time": "real_s=6.03 user_s=0.00 system_s=0.00"
+  },
+  {
+    "program": "atomic",
+    "run": 1,
+    "returncode": 0,
+    "wall_seconds": 0.049934665992623195,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.04 user_s=0.08 system_s=0.00"
+  },
+  {
+    "program": "atomic",
+    "run": 2,
+    "returncode": 0,
+    "wall_seconds": 0.03672795899910852,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.03 user_s=0.06 system_s=0.00"
+  },
+  {
+    "program": "atomic",
+    "run": 3,
+    "returncode": 0,
+    "wall_seconds": 0.031807915976969525,
+    "stdout": "counter = 2000000 (expected 2000000)\n",
+    "stderr": "",
+    "time": "real_s=0.02 user_s=0.05 system_s=0.00"
+  }
+]

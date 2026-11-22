@@ -1,0 +1,8 @@
+$ ./race  # run 1
+counter = 1027667 (expected 2000000)
+
+$ ./race  # run 2
+counter = 1029921 (expected 2000000)
+
+$ ./race  # run 3
+counter = 1062160 (expected 2000000)

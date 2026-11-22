@@ -1,0 +1,383 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\definecolor{codegray}{RGB}{245,245,245}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,
+  breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educa\c{t}iei \c{s}i Cercet\u{a}rii al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnic\u{a} a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatic\u{a} \c{s}i Microelectronic\u{a}\par}
+\vspace{0.45cm}
+{\large Departamentul Ingineria Software \c{s}i Automatic\u{a}\par}
+\vspace{3cm}
+{\Large\bfseries Report on Laboratory Work No. 11\par}
+\vspace{0.55cm}
+{\LARGE\bfseries The Race and the Semaphore\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Ca\c{t} Chiril\\[0.8cm]
+\textbf{Checked by:} asist. univ. Rei\c{t}man Patricia
+\end{flushleft}
+\vfill
+{Chi\c{s}in\u{a}u -- 2026\par}
+\end{titlepage}
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Aim, environment, and deliverables}
+This lab investigates what happens when two POSIX threads update a shared
+variable without synchronization. I first observed lost updates, then
+protected the same increment with a mutex and a semaphore. The remaining
+experiments use a semaphore to signal readiness and to limit the number of
+cars admitted to a parking lot. All four required parts are complete; the
+atomic-counter comparison is an additional, optional experiment.
+
+The programs ran on Ubuntu 24.04.5 LTS, on aarch64 with glibc 2.39 and
+GCC 13.3.0. Every build explicitly used \texttt{-O0}, as the handout asks
+not to optimize the race example. The full flags were:
+\begin{lstlisting}
+gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread \
+    -o /tmp/race lab11/code/race.c
+\end{lstlisting}
+All nine configurations compiled successfully under these flags. The same
+flags were used for the five required programs, the three altered-value
+variants, and the optional atomic program. Each configuration ran three
+times, giving \textbf{27 executions}. GNU time recorded elapsed, user,
+and system time; the runner also measured end-to-end wall time with Python's
+monotonic high-resolution clock.
+
+The required sources are \texttt{race.c}, \texttt{mutex.c}, \texttt{sem.c},
+\texttt{order.c}, and \texttt{parking.c}, all under \texttt{lab11/code/}.
+They use the companion \texttt{thread\_utils.h} for consistent error
+checks. POSIX thread functions return an error code rather than setting
+\texttt{errno}; the helper handles that correctly. Semaphore waits retry
+\texttt{EINTR}, so an interrupted wait never admits a thread without a
+permit. Synchronization objects are destroyed after the worker threads
+have joined. The race itself remains deliberately unprotected.
+
+The submitted defaults are the correct versions: one permit for the
+counter semaphore, zero for the readiness semaphore, and three parking
+places. Separate builds with \texttt{-DSEM\_START=2},
+\texttt{-DREADY\_START=1}, and \texttt{-DPLACES=1} implement the handout's
+variations without leaving the final source in a broken configuration.
+Parking IDs are passed as pointers to stable array elements rather than
+integer-to-pointer casts.
+
+The required \texttt{report.md} contains all ten Observe answers and
+selected output. The PDF follows the previous laboratory reports; its
+editable source and the handout are in \texttt{report\_files/}. Actual
+outputs, timing records, and verification results are retained under
+\path{lab11/report_files/output/}. No sample counter values from the
+handout were substituted for measurements.
+
+\clearpage
+\section{Part 1: seeing the race}
+\subsection{The shared increment}
+Both threads execute one million increments of the same global
+\texttt{long counter}, initially zero. Main joins both threads before
+printing, so it does not read the final result while a worker is still
+running. Joining does not, however, synchronize the two workers' updates
+with each other.
+\begin{lstlisting}[language=C]
+for (int i = 0; i < N; i++)
+    counter++;  /* Intentionally not protected. */
+\end{lstlisting}
+The expected mathematical total is \(2 \times 1000000 = 2000000\).
+The observed totals were:
+\lstinputlisting{output/race.txt}
+
+\subsection{How one addition is lost}
+An ordinary increment is conceptually a load, an addition in a register,
+and a store back to memory. A possible overlap is:
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Step & Thread A & Thread B \\
+\midrule
+1 & Load counter = 7 & \\
+2 & & Load counter = 7 \\
+3 & Compute 7 + 1 = 8 & \\
+4 & & Compute 7 + 1 = 8 \\
+5 & Store 8 & \\
+6 & & Store 8 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Two attempted additions leave 8, not 9. The second store overwrites rather
+than combines the first update. Scheduler decisions and overlapping
+accesses explain why the measured totals differ between these runs.
+
+This is a teaching model of a data race, not a valid way to compute a
+counter. In the C memory model, conflicting unsynchronized accesses have
+\textbf{undefined behavior}. Building with \texttt{-O0} makes the example
+easier to observe but does not remove that undefined behavior. Contrary to
+a literal reading of the handout's ``never 2,000,000'', a racy run can
+accidentally print the expected number. Neither a fixed range of wrong
+answers nor a different answer on every invocation is guaranteed.
+
+\clearpage
+\section{Part 2: mutex and binary semaphore}
+The mutex version surrounds the complete increment with lock and unlock.
+The semaphore version waits for one permit and returns it after incrementing:
+\begin{lstlisting}[language=C]
+/* mutex.c */
+pthread_mutex_lock(&lock);
+counter++;
+pthread_mutex_unlock(&lock);
+/* sem.c: s initially contains one permit */
+sem_wait_checked(&s);
+counter++;
+sem_post(&s);
+\end{lstlisting}
+The excerpt omits error-check wrappers around the mutex and post operations.
+Only one thread may update the counter at a time in either correct version.
+The results of the three runs were:
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Configuration & Run 1 & Run 2 & Run 3 \\
+\midrule
+Mutex & 2000000 & 2000000 & 2000000 \\
+Semaphore, start 1 & 2000000 & 2000000 & 2000000 \\
+Semaphore, start 2 & 1791203 & 1709203 & 1844541 \\
+\bottomrule
+\end{tabular}
+\end{center}
+With two permits, both workers can enter simultaneously. The semaphore
+protects its own count, not the application's unprotected increment; mutual
+exclusion is lost and the altered program again has a data race. A binary
+semaphore works as a lock here, but unlike a mutex it has no owner and can
+be incorrectly posted above one.
+
+\subsection{The price of synchronization}
+Measured end-to-end wall time in seconds:
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+Program & Run 1 & Run 2 & Run 3 & Median \\
+\midrule
+race & 0.004462 & 0.004463 & 0.004460 & 0.004462 \\
+mutex & 0.055737 & 0.056001 & 0.058797 & 0.056001 \\
+sem & 0.131739 & 0.172545 & 0.142064 & 0.142064 \\
+atomic & 0.049935 & 0.036728 & 0.031808 & 0.036728 \\
+\bottomrule
+\end{tabular}
+\end{center}
+These values include process startup and the GNU time wrapper. Separate
+GNU elapsed/user/system values are retained in the raw timing files.
+GNU time rounded the race's elapsed time to 0.00 s, not literally zero.
+
+Two million lock/unlock or wait/post pairs add synchronization and shared
+cache-line overhead; contention can also block and wake threads. The
+measurements compare these implementations, including their error checks,
+not isolated primitive latency. The observed median order was race,
+atomic, mutex, semaphore, from fastest to slowest. Exact timings and the
+relative order are not universal, and a fast incorrect answer is not a
+valid optimization.
+
+\clearpage
+\section{Part 3: a semaphore as a signal}
+\subsection{Starting at zero: wait until the data is ready}
+The shared array \texttt{message[32]} is global. The writer simulates work
+with a one-second sleep, copies \texttt{"hello"} into the array, announces
+completion, and posts \texttt{ready}. The reader waits before reading:
+\begin{lstlisting}[language=C]
+/* Writer */
+strcpy(message, "hello");
+printf("A: message written\n");
+sem_post(&ready);
+/* Reader */
+sem_wait_checked(&ready);
+printf("B: I read \"%s\"\n", message);
+\end{lstlisting}
+With \texttt{sem\_init(\&ready, 0, 0)}, all three runs produced this output:
+\lstinputlisting{output/order-1.stdout}
+The successful wait consumes the permit posted after the write and
+synchronizes the reader with the writer's prior memory operations. It is
+the semaphore, not the sleep or the order of thread creation, that
+establishes the required data dependency. Posting before the reader reaches
+wait also works: the permit is retained until consumed.
+
+\subsection{Starting at one: the broken ordering}
+I compiled a separate version with \texttt{-DREADY\_START=1}. Every altered
+run produced:
+\lstinputlisting{output/order_one-1.stdout}
+The reader immediately consumes the initial permit and proceeds before the
+writer posts. In these runs it reads the empty, zero-initialized global
+array while the writer is sleeping. This is not uninitialized garbage.
+The altered program no longer guarantees write-before-read ordering;
+other schedules may behave differently. A sleep is not a substitute for
+synchronization of shared data.
+
+Both configurations took about one second overall because main joins the
+writer even when the reader finishes early. The submitted default remains
+zero: no permission to proceed exists until a signal is posted.
+
+\clearpage
+\section{Part 4: the parking lot}
+The semaphore starts at three and controls admission for six cars. Each car
+waits before entering and posts only after leaving. A separate mutex keeps
+the occupancy update and its print together. The mutex is released while
+the car is parked, so it is not what limits the number of parked cars.
+\lstinputlisting{output/parking-1.stdout}
+The maximum reported occupancy was \textbf{3} in each of three default runs.
+The guarantee comes from the wait before admission, the three initial
+permits, and exactly one post per departure. No fixed arrival order or
+FIFO fairness is promised. The verifier tracks the active car IDs and
+checks every displayed occupancy, rather than merely searching for a
+maximum number in the output.
+
+\subsection{Changing the capacity to one}
+The separately compiled \texttt{-DPLACES=1} version had a maximum occupancy
+of \textbf{1} in all three runs. It behaves as a binary semaphore admitting
+one car at a time for the entire parking interval. Every car still entered
+and left exactly once, and the final occupancy was zero.
+
+Default runs took approximately 2.01 seconds: roughly two waves of three
+one-second stays. The one-place runs took approximately 6.02 seconds:
+six sequential stays. These times are observations, not timing assertions.
+The semaphore becomes a one-at-a-time admission lock, not a mutex with
+ownership rules. The mutex remains useful for the occupancy diagnostics,
+including the interval between releasing it and posting the permit.
+
+\clearpage
+\section{Handout questions and answers}
+\subsection{Part 1: the race}
+\begin{enumerate}
+\Needspace{6\baselineskip}
+\item \textbf{Question:} Counter++ looks like one step. Write the three steps the CPU really does.
+\par\textbf{Answer:} Conceptually load the shared value into a register,
+add one to the register, then store it back. This ordinary C operation is
+not an atomic read-modify-write.
+
+\Needspace{6\baselineskip}
+\item \textbf{Question:} Describe, with those steps, how two threads can lose one addition.
+\par\textbf{Answer:} Both load 7 before either stores; both compute 8;
+each stores 8. The final value is 8 instead of 9, so one increment is lost.
+
+\Needspace{6\baselineskip}
+\item \textbf{Question:} Why is the result different at every run?
+\par\textbf{Answer:} Scheduling and overlap of memory accesses change
+which updates collide. All three recorded values differed. A C data race
+has undefined behavior, so different results on every run are not actually
+guaranteed; a correct-looking result is also possible.
+\end{enumerate}
+
+\subsection{Part 2: mutex and semaphore}
+\begin{enumerate}
+\Needspace{6\baselineskip}
+\item \textbf{Question:} Run mutex and sem three times each. Is the answer always 2,000,000?
+\par\textbf{Answer:} Yes, all six recorded runs returned exactly 2,000,000.
+Both versions serialize the full increment, and main joins both threads.
+
+\Needspace{7\baselineskip}
+\item \textbf{Question:} What would happen in sem.c with sem\_init(\&s, 0, 2)? Try it and explain.
+\par\textbf{Answer:} Two permits allow both workers into the critical
+section. The observed totals were 1791203, 1709203, and 1844541. The
+increment is no longer mutually exclusive and has a data race again.
+
+\Needspace{6\baselineskip}
+\item \textbf{Question:} Why is the locked version slower?
+\par\textbf{Answer:} Every increment pays for lock/unlock or wait/post,
+shared-cache-line contention, and possibly blocking and waking. The race
+is faster here but does not compute a valid result.
+\end{enumerate}
+
+\subsection{Part 3: signaling}
+\begin{enumerate}
+\Needspace{7\baselineskip}
+\item \textbf{Question:} Change the start value to 1, compile, run. What does B read now, and why?
+\par\textbf{Answer:} In all three runs B read \texttt{""}, the initially
+empty global buffer, before A wrote the message. The initial permit lets
+B pass wait immediately, removing the required write-before-read ordering.
+
+\Needspace{6\baselineskip}
+\item \textbf{Question:} Put it back to 0. In one sentence: what does a semaphore that starts at 0 mean?
+\par\textbf{Answer:} There is no permission to proceed yet, so a waiter
+must wait for another thread's post, or consume a signal already posted.
+\end{enumerate}
+
+\subsection{Part 4: parking}
+\begin{enumerate}
+\Needspace{7\baselineskip}
+\item \textbf{Question:} What is the largest value of inside you see? Which line of code guarantees it?
+\par\textbf{Answer:} Three. \texttt{sem\_wait(\&places)}, called through
+\texttt{sem\_wait\_checked}, before entry enforces the limit, with three
+initial permits and one balanced post after each departure. The mutex
+protects the diagnostic counter, not the full parking interval.
+
+\Needspace{6\baselineskip}
+\item \textbf{Question:} Set PLACES to 1. What does the semaphore become?
+\par\textbf{Answer:} A binary semaphore acting as a one-at-a-time
+admission lock. Each altered run had maximum occupancy one and final
+occupancy zero; this does not give it mutex ownership or FIFO semantics.
+\end{enumerate}
+
+\clearpage
+\section{Optional atomic counter and verification}
+\subsection{An indivisible counter update}
+The optional \texttt{atomic.c} uses \texttt{atomic\_long} and
+\texttt{atomic\_fetch\_add(\&counter, 1)}. It returned exactly 2,000,000 in
+all three runs, without an explicit mutex or semaphore. Its median elapsed
+time was 0.036728 seconds in this measurement, below the mutex and semaphore
+versions but above the incorrect race.
+
+Atomic operations are indivisible at the C memory-model level. C does not
+promise that every atomic type on every platform uses a single hardware
+instruction or is lock-free; a target may use exclusive-access retries or
+other implementation support. This solves one counter update, not an
+arbitrary multi-variable critical section.
+
+\subsection{What was verified}
+The retained verifier passed \textbf{389 assertions across 27 executions}:
+\begin{itemize}
+\item All runs exited successfully without error diagnostics; raw standard
+output matched the corresponding machine-readable record.
+\item Mutex, semaphore-start-one, and atomic runs all reached exactly
+2,000,000. Both intentionally unsafe counter configurations exhibited
+incorrect totals in the recorded runs.
+\item The zero-start reader printed \texttt{hello} only after the writer's
+announcement. The altered-start experiment also completed and its actual
+output was retained without pretending it was a correctness guarantee.
+\item Every parking run contained six entries and six departures. Each car
+entered and left exactly once. Every occupancy value matched the active
+set, stayed within capacity, and returned to zero.
+\end{itemize}
+The tests impose no arbitrary timing threshold or fixed car order, and they
+do not prove the absence of every possible concurrency bug. The safety
+argument comes from the synchronization design; repeated runs provide
+supporting evidence. All sources retained \texttt{-O0}; no artificial
+counter result or forced sleep was inserted into the increment loops.
+
+\section{Conclusion}
+The unprotected increment loses work because its read-modify-write is not
+atomic. A mutex or a one-permit semaphore serializes the update. A
+zero-permit semaphore instead expresses readiness: the reader cannot
+proceed until the writer publishes the data. A multi-permit semaphore
+limits concurrent access to a finite resource, while a mutex can separately
+protect diagnostic state. The experiments demonstrate three semaphore
+roles---lock, signal, and resource counter---and show why correctness must
+be established before comparing execution speed.
+\end{document}

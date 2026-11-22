@@ -1,0 +1,9 @@
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab11/report_files/output/bin/race /work/lab11/code/race.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab11/report_files/output/bin/mutex /work/lab11/code/mutex.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab11/report_files/output/bin/sem /work/lab11/code/sem.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -DSEM_START=2 -o /work/lab11/report_files/output/bin/sem_two /work/lab11/code/sem.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab11/report_files/output/bin/order /work/lab11/code/order.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -DREADY_START=1 -o /work/lab11/report_files/output/bin/order_one /work/lab11/code/order.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab11/report_files/output/bin/parking /work/lab11/code/parking.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -DPLACES=1 -o /work/lab11/report_files/output/bin/parking_one /work/lab11/code/parking.c
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -pthread -o /work/lab11/report_files/output/bin/atomic /work/lab11/code/atomic.c

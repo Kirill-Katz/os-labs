@@ -1,0 +1,8 @@
+$ ./mutex  # run 1
+counter = 2000000 (expected 2000000)
+
+$ ./mutex  # run 2
+counter = 2000000 (expected 2000000)
+
+$ ./mutex  # run 3
+counter = 2000000 (expected 2000000)

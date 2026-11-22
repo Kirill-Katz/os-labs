@@ -1,0 +1,8 @@
+$ ./atomic  # run 1
+counter = 2000000 (expected 2000000)
+
+$ ./atomic  # run 2
+counter = 2000000 (expected 2000000)
+
+$ ./atomic  # run 3
+counter = 2000000 (expected 2000000)

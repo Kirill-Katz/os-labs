@@ -1,0 +1,8 @@
+$ ./sem_two  # run 1
+counter = 1791203 (expected 2000000)
+
+$ ./sem_two  # run 2
+counter = 1709203 (expected 2000000)
+
+$ ./sem_two  # run 3
+counter = 1844541 (expected 2000000)

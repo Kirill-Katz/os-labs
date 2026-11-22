@@ -1,0 +1,14 @@
+$ ./order_one  # run 1
+B: waiting for the message...
+B: I read ""
+A: message written
+
+$ ./order_one  # run 2
+B: waiting for the message...
+B: I read ""
+A: message written
+
+$ ./order_one  # run 3
+B: waiting for the message...
+B: I read ""
+A: message written
