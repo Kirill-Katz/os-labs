@@ -1,0 +1,6 @@
+report_files/output/syscalls
+report_files/output/work/
+report_files/*.aux
+report_files/*.log
+report_files/*.out
+report_files/*.toc

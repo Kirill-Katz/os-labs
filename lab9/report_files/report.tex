@@ -1,0 +1,252 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\definecolor{codegray}{RGB}{245,245,245}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,
+  breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educa\c{t}iei \c{s}i Cercet\u{a}rii al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnic\u{a} a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatic\u{a} \c{s}i Microelectronic\u{a}\par}
+\vspace{0.45cm}
+{\large Departamentul Ingineria Software \c{s}i Automatic\u{a}\par}
+\vspace{3cm}
+{\Large\bfseries Report on Laboratory Work No. 9\par}
+\vspace{0.55cm}
+{\LARGE\bfseries Watching System Calls with strace\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Ca\c{t} Chiril\\[0.8cm]
+\textbf{Checked by:} asist. univ. Rei\c{t}man Patricia
+\end{flushleft}
+\vfill
+{Chi\c{s}in\u{a}u -- 2026\par}
+\end{titlepage}
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Aim, environment, and deliverables}
+The aim is to observe the boundary between a user program and the Linux
+kernel. I traced a real command, implemented a small file round trip using
+\texttt{open}, \texttt{write}, \texttt{read}, and \texttt{close}, and counted
+its write calls. Unlike the preceding xv6 exercise, this lab runs on Linux.
+
+All compilation, execution, tracing, and automated tests ran on Ubuntu
+24.04.5 LTS on an ARM64 Linux system, using GCC 13.3.0 and strace 6.8.
+The compiler completed with no warnings under
+\texttt{-std=c11 -Wall -Wextra -Werror}.
+
+The supplied handout has two pages. Its overview names Part 3, ``Count one
+kind of call'', but there are no detailed Part 3 instructions or Observe
+questions in the supplied PDF. The counting experiment below is therefore
+a supplementary interpretation of that heading, not a quotation of missing
+instructions. Both Observe questions that actually appear in the handout
+are answered explicitly in this report and in \texttt{lab9/report.md}.
+
+\begin{lstlisting}
+# On Ubuntu, compile the program:
+gcc -std=c11 -Wall -Wextra -Werror -O0 -g \
+  -o syscalls syscalls.c
+./syscalls
+strace -e trace=openat,write,read,close ./syscalls
+\end{lstlisting}
+
+The \texttt{code/} directory contains the C source and supporting
+verification scripts. Recorded evidence includes raw traces, standard output, call
+summaries, the build log, environment information, and verification results.
+These are saved under \path{lab9/report_files/output/}.
+The runner creates a fresh one-file listing directory and sets
+\texttt{LC\_ALL=C}, \texttt{TZ=UTC}, and \texttt{umask 022} so the experiment
+does not depend on unrelated host files. It records strace output with
+\texttt{-o} separately from the program's standard output.
+
+\clearpage
+\section{Part 1: tracing a real command}
+On Ubuntu, in the prepared directory, I ran:
+\begin{lstlisting}
+strace -f -e trace=openat,read,write,close -o ls.trace ls -l
+strace -c -o ls.summary ls -l > /dev/null
+\end{lstlisting}
+The runner uses absolute output paths; the commands above abbreviate those
+paths for readability. The following lines are excerpts of the actual
+filtered trace. The PID prefix was 22 in this run:
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+22 openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+22 close(3) = 0
+22 openat(AT_FDCWD, ".", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+22 openat(AT_FDCWD, "/etc/passwd", O_RDONLY|O_CLOEXEC) = 4
+22 read(4, "root:x:0:0:root:/root:/bin/bash\n"..., 4096) = 888
+22 close(4) = 0
+22 write(1, "total 4\n-rw-r--r-- 1 root root 2"..., 59) = 59
+22 close(1) = 0
+22 close(2) = 0
+\end{lstlisting}
+
+\subsection{What the calls mean}
+The first calls load shared libraries and configuration. Opening
+\texttt{"."} obtains a descriptor for the current directory. The long
+listing also needs user and group information, which explains reads from
+\texttt{/etc/passwd} and \texttt{/etc/group}. The listing itself is sent
+with \texttt{write(1, ...)}. Descriptor 1 is standard output: on an
+interactive terminal it leads to the screen, while in this captured run it
+was redirected to \texttt{ls.stdout}.
+
+The filter is not a complete account of directory traversal. Linux reads
+directory entries with \texttt{getdents64}; the full summary contains two
+such calls, but the handout's four-call filter hides them. Metadata calls,
+memory mapping, and process startup also disappear from that filtered view.
+
+\subsection{How many calls were observed?}
+The filtered trace contained \textbf{38} calls: 10 \texttt{openat},
+11 \texttt{read}, 16 \texttt{close}, and one \texttt{write}. The final
+unfiltered \texttt{strace -c} run reported \textbf{113} calls in total,
+including 12 errors. These include unsuccessful environment probes, not
+necessarily failures of the listing command, which exited successfully.
+An earlier run reported 114 total calls. Thus the useful rough answer is
+about a hundred calls for this small listing, not a universal constant.
+Architecture, libc, configuration, output destination, and directory
+contents can change the count. Timing columns in the raw summary are not
+used as performance measurements.
+
+\clearpage
+\section{Part 2: writing and reading through descriptors}
+\subsection{Implementation and normal output}
+The program follows the handout's sequence: open \texttt{note.txt} for
+writing, send the message, close it, reopen it for reading, and display
+what was read. The file itself is accessed using descriptor-based
+\texttt{write} and \texttt{read}, not \texttt{fprintf} or \texttt{fread}.
+The important operations are:
+\begin{lstlisting}[language=C]
+const char *msg = "hello, kernel\n";
+int fd = open("note.txt", O_CREAT | O_WRONLY | O_TRUNC, 0644);
+/* Check fd, then write the message, retrying interruptions
+   and handling short writes. Close before reopening. */
+fd = open("note.txt", O_RDONLY);
+char buf[64];
+n = read(fd, buf, sizeof(buf) - 1);
+/* Check n before using it as an index. */
+buf[n] = '\0';
+printf("read got %zd bytes: %s", n, buf);
+close(fd);
+\end{lstlisting}
+This is an abbreviated explanation, not the complete error-handling code.
+The complete \texttt{syscalls.c} checks both opens, writes, read, and both
+normal-path closes. It retries interrupted I/O and handles short writes.
+In particular, it does not index \texttt{buf[-1]} after a failed read, a
+risk in the unchecked handout example.
+
+\begin{lstlisting}
+$ gcc -std=c11 -Wall -Wextra -Werror -O0 -g \
+    -o syscalls syscalls.c
+$ ./syscalls
+open returned descriptor 3
+write sent 14 bytes
+read got 14 bytes: hello, kernel
+\end{lstlisting}
+
+The message contains 14 bytes, including the newline but excluding C's
+terminating null byte. \texttt{O\_TRUNC} removes previous contents of an
+existing file; \texttt{O\_CREAT} creates it if necessary. The requested mode
+is 0644, with actual permissions also subject to the process umask.
+\texttt{read} requests at most 63 bytes, leaving space for the added null
+terminator, and returns the 14 bytes available in this file. A successful
+read in general can return fewer bytes than requested; this example is a
+single read of the tiny local file, not a general-purpose file copier.
+
+\clearpage
+\subsection{The observed kernel calls}
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/syscalls.trace}
+The first five lines concern the loader and libc. The next six lines
+correspond directly to the file round trip. \texttt{AT\_FDCWD} means a
+relative pathname is resolved against the current working directory.
+The C library's \texttt{open()} wrapper uses the Linux \texttt{openat}
+system call in this environment. These are libc wrappers around kernel
+services, not handwritten assembly or calls to the \texttt{syscall()}
+function.
+
+The first file descriptor is 3 because 0, 1, and 2 were already inherited
+as standard input, standard output, and standard error. After
+\texttt{close(3)}, that number is free, so the second open reuses 3.
+A descriptor is a per-process integer handle, not a permanent file ID.
+
+\clearpage
+\section{Part 3: counting one kind of call (supplement)}
+I chose \texttt{write} to compare a C-level print with actual kernel calls:
+\begin{lstlisting}
+strace -c -e trace=write -o write.summary ./syscalls
+strace -e trace=write -o write.trace ./syscalls
+\end{lstlisting}
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/write.trace}
+
+The independent summary also reports two \texttt{write} calls:
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/write.summary}
+
+One call sends the 14-byte message to descriptor 3. The other sends all
+80 bytes of diagnostic output to descriptor 1. Although the source calls
+\texttt{printf} three times, standard output was redirected to a regular
+file during evidence capture and libc buffered those messages until exit.
+The file write therefore appears before the diagnostic write in the trace,
+even though the first \texttt{printf} appears earlier in the source.
+On a terminal, stdout is normally line buffered, so the number and ordering
+of stdout writes can differ. Counting \texttt{printf} statements is not
+how to count \texttt{write} system calls.
+
+\section{Handout questions and answers}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Which system call does \texttt{ls} use to print to the screen? To which descriptor does it write?
+\par\textbf{Answer:} It uses \texttt{write} to descriptor 1, standard output. The recorded trace shows a 59-byte \texttt{write(1, ...)}. Here stdout was captured in a file rather than displayed on a terminal; the descriptor's role is unchanged.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} The descriptor returned by the first \texttt{openat} is 3, not 0, 1 or 2. Why are those three already taken?
+\par\textbf{Answer:} The process inherits descriptor 0 for standard input, 1 for standard output, and 2 for standard error. With those open, 3 is the lowest available descriptor when \texttt{note.txt} is opened. Library startup briefly used 3 and closed it before \texttt{main} reached the file open.
+\end{enumerate}
+
+\clearpage
+\section{Verification and conclusion}
+The retained verifier checked the program's exact output in normal, traced,
+and call-counting runs, and compared \texttt{note.txt} with the expected
+14 bytes. It checked all six file calls in order, matched their return
+values, and independently compared the two-write trace with the summary.
+It also tested these cases in a temporary directory:
+\begin{itemize}
+\item An existing longer file is truncated and replaced by exactly the message.
+\item A directory named \texttt{note.txt} causes the write-open to fail; the program reports the error and exits with status 1.
+\item A \texttt{note.txt} symlink to \texttt{/dev/full} forces a write failure; the program reports it and exits with status 1.
+\end{itemize}
+All \textbf{15 assertions} passed on the final complete rerun.
+The verification evidence is in \texttt{output/verification.txt}; the
+complete shell command log and environment are in \texttt{output/session.txt}.
+The tests cover normal behavior, truncation, and representative open/write
+errors, but do not claim exhaustive fault injection for every read or close
+failure.
+
+The experiment connects source-level operations to observed Linux calls.
+The kernel returns small descriptor numbers that can be reused after
+closing; calls return actual byte counts rather than the requested amount
+by definition. A simple command performs many startup and metadata calls
+in addition to its visible output. Finally, stdio buffering explains why
+several C print operations can become one kernel write, while the explicit
+file write appears immediately in the trace.
+
+\end{document}

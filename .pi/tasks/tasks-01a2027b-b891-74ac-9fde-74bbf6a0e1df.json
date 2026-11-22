@@ -1,0 +1,38 @@
+{
+  "nextId": 16,
+  "tasks": [
+    {
+      "id": "13",
+      "subject": "Inspect xv6 semaphore requirements and capture Part 1",
+      "description": "Read Lab 13 and the current sleep/wakeup/kill interfaces, verify the starting tree boots, add syscall numbers/user stubs and required programs, and capture the unknown-call checkpoint.",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1795342446894,
+      "updatedAt": 1795342657930
+    },
+    {
+      "id": "14",
+      "subject": "Implement and test kernel semaphores",
+      "description": "Implement syscalls 24–26 with correct synchronization and trace names; test semtest, unlocked/locked mix, invalid arguments, blocking/wakeup, kill behavior, and relevant xv6 regressions.",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1795342453651,
+      "updatedAt": 1795343109618
+    },
+    {
+      "id": "15",
+      "subject": "Create Lab 13 report and commit submission",
+      "description": "Write notes.txt with four Observe answers, produce a report matching earlier labs, retain actual checkpoint and test evidence and source copies, verify the PDF, and commit only Lab 13 changes locally.",
+      "status": "completed",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1795342463979,
+      "updatedAt": 1795343545489
+    }
+  ]
+}

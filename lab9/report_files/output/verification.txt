@@ -1,0 +1,17 @@
+PASS: syscalls.stdout matches expected output
+PASS: syscalls-traced.stdout matches expected output
+PASS: count.stdout matches expected output
+PASS: note.txt contains exactly 14 expected bytes
+PASS: ordered syscall: openat\(AT_FDCWD, "note.txt", O_WRONLY\|O_CREAT\|O_TRUNC, 0644\)\s+= 3
+PASS: ordered syscall: write\(3, "hello, kernel\\n", 14\)\s+= 14
+PASS: ordered syscall: close\(3\)\s+= 0
+PASS: ordered syscall: openat\(AT_FDCWD, "note.txt", O_RDONLY\)\s+= 3
+PASS: ordered syscall: read\(3, "hello, kernel\\n", 63\)\s+= 14
+PASS: ordered syscall: close\(3\)\s+= 0
+PASS: two writes: 14 bytes to file, buffered diagnostics to stdout
+PASS: strace -c independently counts two write calls
+PASS: O_TRUNC replaces longer existing contents
+PASS: open failure exits cleanly (note.txt is a directory)
+PASS: write failure exits cleanly (/dev/full)
+OBSERVED: 38 calls in filtered ls trace
+OBSERVED: 2 write calls in syscalls
