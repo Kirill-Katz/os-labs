@@ -1,0 +1,34 @@
+trace 2147483647 nosuchprog
+72: syscall trace -> 0
+72: syscall exec -> -1
+t72: syscall write -> 1
+r72: syscall write -> 1
+a72: syscall write -> 1
+c72: syscall write -> 1
+e72: syscall write -> 1
+:72: syscall write -> 1
+ 72: syscall write -> 1
+e72: syscall write -> 1
+x72: syscall write -> 1
+e72: syscall write -> 1
+c72: syscall write -> 1
+ 72: syscall write -> 1
+n72: syscall write -> 1
+o72: syscall write -> 1
+s72: syscall write -> 1
+u72: syscall write -> 1
+c72: syscall write -> 1
+h72: syscall write -> 1
+p72: syscall write -> 1
+r72: syscall write -> 1
+o72: syscall write -> 1
+g72: syscall write -> 1
+ 72: syscall write -> 1
+f72: syscall write -> 1
+a72: syscall write -> 1
+i72: syscall write -> 1
+l72: syscall write -> 1
+e72: syscall write -> 1
+d72: syscall write -> 1
+
+72: syscall write -> 1

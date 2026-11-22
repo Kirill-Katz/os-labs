@@ -1,0 +1,95 @@
+LAB 10 — Add Your Own System Call: trace
+
+Environment and scope
+Ubuntu 24.04.5 LTS; RISC-V GCC 13.3.0; QEMU 8.2.2; xv6-riscv guest,
+3 CPUs and 128 MiB RAM. All three required parts are complete.
+SYS_sync remains 22; SYS_trace is 23; kernel output uses printk.
+The optional sysinfo syscall was not implemented.
+
+Observe 1
+Q: In trace 32 grep hello README why do you see only read, and not open
+   or close?
+A: 32 = 1 << 5, and SYS_read is 5. The bits for SYS_open (15) and
+   SYS_close (21) are zero. Open and close still execute, but their
+   results are not printed by the mask check.
+
+Observe 2
+Q: In forkforkfork, three different pids print lines. Which line of code
+   from Part 2 makes that possible?
+A: np->trace_mask = p->trace_mask; after copying the name in kfork
+   (this tree's fork implementation). Every child inherits the mask,
+   so descendants can trace their own calls. In the recorded run,
+   PIDs 5, 6, 7 and 8 printed fork calls; the runner also forks, and
+   exact process IDs and scheduling can differ from the sample.
+
+Observe 3
+Q: In trace 65536 echo hi the trace line is printed between "hi" and
+   the new line. Why? (How many times does echo call write?)
+A: echo writes twice: write(1, "hi", 2), then write(1, "\n", 1).
+   The dispatcher prints after the first write returns, before echo
+   issues its second write. Therefore the first trace follows hi on
+   the same line; the newline is written before the second trace.
+
+Observe 4
+Q: Which mask traces both open (15) and close (21), and nothing else?
+A: (1 << 15) | (1 << 21) = 32768 + 2097152 = 2129920.
+   trace 2129920 grep hello README printed only open -> 3 and close -> 0.
+
+Required checkpoints (actual output)
+Part 1, before kernel implementation:
+$ trace 32 grep hello README
+3 trace: unknown sys call 23
+trace: failed
+
+Part 2, completed:
+$ trace 32 grep hello README
+3: syscall read -> 1023
+3: syscall read -> 965
+3: syscall read -> 453
+3: syscall read -> 0
+The positive counts sum to 2441, the unchanged README size; zero means EOF.
+
+Part 3, all bits:
+$ trace 2147483647 grep hello README
+4: syscall trace -> 0
+4: syscall exec -> 3
+4: syscall open -> 3
+4: syscall read -> 1023
+4: syscall read -> 965
+4: syscall read -> 453
+4: syscall read -> 0
+4: syscall close -> 0
+exec returns 3 here to supply the new program's argc. exit never returns
+through the post-handler tracing location and therefore has no trace line.
+
+Part 3, forks:
+$ trace 2 usertests forkforkfork
+The transcript contains fork calls from PIDs 5, 6, 7, 8, including
+fork -> -1 when the process table fills. It ends:
+OK
+ALL TESTS PASSED
+See report_files/output/fork.txt for the full, unabridged output.
+
+Part 3, writes:
+$ trace 65536 echo hi
+hi67: syscall write -> 2
+
+67: syscall write -> 1
+
+Additional checks
+- trace 0 echo quiet: no trace lines.
+- echo untraced, after a traced command: no leaked tracing.
+- trace with no arguments: correct usage message.
+- trace 2147483647 nosuchprog: exec -> -1 and error message (its characters
+  are interleaved with write traces because xv6 fprintf writes per character).
+- tracetest: child inherits getpid tracing; disabling in the child leaves
+  the parent's mask unchanged; disabling in each process suppresses later calls.
+- usertests -q: 68 tests, ALL TESTS PASSED. Expected user-trap diagnostics
+  from memory-protection tests are not kernel panics.
+- Ten source copies match the tested integrated xv6 files byte for byte.
+
+Conclusion
+A syscall requires a shared number, a user declaration and ecall stub, a
+kernel handler, and a dispatch-table entry. Each process keeps its own mask,
+which survives exec and is copied across fork. Printing after the handler
+reports actual return values and explains echo's interleaved output.

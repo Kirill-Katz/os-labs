@@ -153,6 +153,8 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_trace\
+	$U/_tracetest\
 	$U/_logstress\
 	$U/_forphan\
 	$U/_dorphan\

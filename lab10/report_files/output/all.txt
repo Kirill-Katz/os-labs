@@ -1,0 +1,9 @@
+trace 2147483647 grep hello README
+4: syscall trace -> 0
+4: syscall exec -> 3
+4: syscall open -> 3
+4: syscall read -> 1023
+4: syscall read -> 965
+4: syscall read -> 453
+4: syscall read -> 0
+4: syscall close -> 0

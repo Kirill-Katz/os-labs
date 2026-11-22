@@ -1,0 +1,53 @@
+PASS: initial xv6 tree boots
+PASS: Part 1 reaches the kernel with syscall 23
+PASS: required read sequence matches handout exactly
+PASS: read byte counts sum to the unchanged 2441-byte README
+PASS: all-call mask produces expected syscall names in order
+PASS: all-call mask returns expected results
+PASS: fork mask filters out other calls
+PASS: fork tracing reaches multiple descendant processes
+PASS: fork resource exhaustion is printed as signed -1
+PASS: forkforkfork completes successfully
+PASS: echo hi performs two traced writes (2 bytes then 1 byte)
+PASS: write tracing appears between hi and its newline
+PASS: mask 2129920 selects only open and close
+PASS: zero mask disables tracing
+PASS: later untraced command does not inherit another process mask
+PASS: missing arguments produce usage message
+PASS: failed exec is traced with -1 and reported to the user
+PASS: fork inherits mask; child and parent can disable tracing independently
+PASS: complete quick usertests suite passes without leaked tracing
+PASS: no kernel panic in all.txt
+PASS: no kernel panic in baseline-build.txt
+PASS: no kernel panic in baseline-session.txt
+PASS: no kernel panic in baseline.txt
+PASS: no kernel panic in checkpoint1-build.txt
+PASS: no kernel panic in checkpoint1-session.txt
+PASS: no kernel panic in checkpoint1.txt
+PASS: no kernel panic in final-build.txt
+PASS: no kernel panic in final-session.txt
+PASS: no kernel panic in fork-excerpt.txt
+PASS: no kernel panic in fork.txt
+PASS: no kernel panic in lifecycle.txt
+PASS: no kernel panic in missing.txt
+PASS: no kernel panic in open-close.txt
+PASS: no kernel panic in plain.txt
+PASS: no kernel panic in read.txt
+PASS: no kernel panic in regression-excerpt.txt
+PASS: no kernel panic in regression.txt
+PASS: no kernel panic in toolchain-build.txt
+PASS: no kernel panic in usage.txt
+PASS: no kernel panic in write.txt
+PASS: no kernel panic in zero.txt
+PASS: submission source matches tested tree: Makefile
+PASS: submission source matches tested tree: kernel/proc.c
+PASS: submission source matches tested tree: kernel/proc.h
+PASS: submission source matches tested tree: kernel/syscall.c
+PASS: submission source matches tested tree: kernel/syscall.h
+PASS: submission source matches tested tree: kernel/sysproc.c
+PASS: submission source matches tested tree: user/user.h
+PASS: submission source matches tested tree: user/usys.pl
+PASS: submission source matches tested tree: user/trace.c
+PASS: submission source matches tested tree: user/tracetest.c
+OBSERVED: 68 tests in usertests -q
+OBSERVED: fork traces from PIDs 5, 6, 7, 8

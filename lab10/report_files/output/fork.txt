@@ -1,0 +1,67 @@
+trace 2 usertests forkforkfork
+usertests starting
+test forkforkfork: 5: syscall fork -> 6
+6: syscall fork -> 7
+7: syscall fork -> 8
+8: syscall fork -> 9
+7: syscall fork -> 10
+8: syscall fork -> 11
+7: syscall fork -> 12
+8: syscall fork -> 13
+7: syscall fork -> 14
+8: syscall fork -> 15
+7: syscall fork -> 16
+8: syscall fork -> 17
+7: syscall fork -> 18
+8: syscall fork -> 19
+7: syscall fork -> 20
+8: syscall fork -> 21
+7: syscall fork -> 22
+8: syscall fork -> 23
+7: syscall fork -> 24
+8: syscall fork -> 25
+7: syscall fork -> 26
+8: syscall fork -> 27
+7: syscall fork -> 28
+8: syscall fork -> 29
+7: syscall fork -> 30
+8: syscall fork -> 31
+8: syscall fork -> 32
+7: syscall fork -> 33
+8: syscall fork -> 34
+7: syscall fork -> 35
+8: syscall fork -> 36
+8: syscall fork -> 37
+7: syscall fork -> 38
+7: syscall fork -> 39
+8: syscall fork -> 40
+7: syscall fork -> 41
+8: syscall fork -> 42
+8: syscall fork -> 43
+7: syscall fork -> 44
+8: syscall fork -> 45
+7: syscall fork -> 46
+8: syscall fork -> 47
+7: syscall fork -> 48
+8: syscall fork -> 49
+7: syscall fork -> 50
+8: syscall fork -> 51
+7: syscall fork -> 52
+8: syscall fork -> 53
+8: syscall fork -> 54
+7: syscall fork -> 55
+8: syscall fork -> 56
+8: syscall fork -> 57
+7: syscall fork -> 58
+8: syscall fork -> 59
+7: syscall fork -> 60
+8: syscall fork -> 61
+7: syscall fork -> 62
+8: syscall fork -> 63
+7: syscall fork -> 64
+8: syscall fork -> 65
+7: syscall fork -> 66
+8: syscall fork -> -1
+7: syscall fork -> -1
+OK
+ALL TESTS PASSED

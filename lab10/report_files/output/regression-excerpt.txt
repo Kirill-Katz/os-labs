@@ -1,0 +1,9 @@
+usertests -q
+usertests starting
+test copyin: OK
+test copyout: OK
+... (remaining test output omitted; full output in regression.txt) ...
+test lazy_sbrk: OK
+test partial_write: OK
+test unlinkcwd: OK
+ALL TESTS PASSED

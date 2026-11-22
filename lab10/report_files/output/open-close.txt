@@ -1,0 +1,3 @@
+trace 2129920 grep hello README
+68: syscall open -> 3
+68: syscall close -> 0

@@ -1,0 +1,3 @@
+trace 32 grep hello README
+3 trace: unknown sys call 23
+trace: failed

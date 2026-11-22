@@ -1,0 +1,2 @@
+trace
+usage: trace mask command [args...]

@@ -1,0 +1,322 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\definecolor{codegray}{RGB}{245,245,245}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{codegray},frame=single,
+  breaklines=true,showstringspaces=false,columns=fullflexible,keepspaces=true}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\begin{document}
+\pagenumbering{gobble}
+\begin{titlepage}
+\centering
+{\large Ministerul Educa\c{t}iei \c{s}i Cercet\u{a}rii al Republicii Moldova\par}
+\vspace{0.45cm}
+{\large Universitatea Tehnic\u{a} a Moldovei\par}
+\vspace{0.45cm}
+{\large Facultatea Calculatoare, Informatic\u{a} \c{s}i Microelectronic\u{a}\par}
+\vspace{0.45cm}
+{\large Departamentul Ingineria Software \c{s}i Automatic\u{a}\par}
+\vspace{3cm}
+{\Large\bfseries Report on Laboratory Work No. 10\par}
+\vspace{0.55cm}
+{\LARGE\bfseries Add Your Own System Call: trace\par}
+\vspace{0.35cm}
+{\large Operating Systems\par}
+\vfill
+\begin{flushleft}
+\textbf{Done by:} st. gr. FAF-241, Ca\c{t} Chiril\\[0.8cm]
+\textbf{Checked by:} asist. univ. Rei\c{t}man Patricia
+\end{flushleft}
+\vfill
+{Chi\c{s}in\u{a}u -- 2026\par}
+\end{titlepage}
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\section{Aim, environment, and deliverables}
+The aim is to add a system call to xv6 and follow it from the user-side
+stub to the kernel handler. In Lab 9, \texttt{strace} observed Linux calls
+from outside a program. Here the xv6 kernel itself prints the selected
+calls after executing them. Each process stores a bit mask that determines
+which syscall numbers are reported.
+
+I implemented all three required parts in the integrated
+\texttt{xv6-riscv/} tree. The host tools were Ubuntu 24.04.5 LTS,
+RISC-V GCC 13.3.0, and QEMU 8.2.2. The guest was xv6-riscv, with QEMU
+configured for three CPUs and 128 MiB of memory. Before editing, I built
+and booted the existing tree and ran \texttt{echo baseline-boot-ok}.
+The final implementation was rebuilt from clean sources with xv6's
+\texttt{-Wall -Werror} compilation settings.
+
+The syscall number is \textbf{23}, because this tree already assigns 22
+to \texttt{sync}. Kernel messages use \texttt{printk}, not user-space
+\texttt{printf}. The file being searched, \texttt{README}, was left
+unchanged at 2441 bytes. Its expected read results are used as an exact
+check, not replaced with fabricated output.
+
+The integrated tree is the executable submission. Matching changed source
+files and the Makefile are under \texttt{lab10/code/}; the patch records the
+changes relative to the starting tree. The report source, assignment,
+and recorded runs are under \texttt{report\_files/}. The required
+\texttt{notes.txt} preserves the Observe answers. The additional
+\texttt{tracetest} program is a regression test, not a second system call.
+The optional, ungraded \texttt{sysinfo} extension was not added.
+
+The main build commands on Ubuntu are:
+\begin{lstlisting}
+sudo apt install build-essential gcc-riscv64-linux-gnu \
+  binutils-riscv64-linux-gnu qemu-system-misc bc perl
+cd xv6-riscv
+make clean
+make -j4 TOOLPREFIX=riscv64-linux-gnu- kernel/kernel fs.img
+make qemu TOOLPREFIX=riscv64-linux-gnu- CPUS=3
+# In QEMU, Ctrl-A followed by X exits the emulator.
+\end{lstlisting}
+The recorded terminal captures come from real xv6 boots. Process IDs are
+specific to those runs; different IDs do not indicate a failure.
+
+\clearpage
+\section{Part 1: the number and the user side}
+\subsection{The five user-side changes}
+\begin{enumerate}
+\item Added \texttt{\#define SYS\_trace 23} after \texttt{SYS\_sync} in
+\texttt{kernel/syscall.h}.
+\item Declared \texttt{int trace(int);} in \texttt{user/user.h}.
+\item Added \texttt{entry("trace");} to \texttt{user/usys.pl}. At build
+time the script generates the assembly stub in \texttt{user/usys.S}.
+\item Created \texttt{user/trace.c} with the handout's argument check,
+mask-setting call, and \texttt{exec(argv[2], argv + 2)}.
+\item Added \texttt{\$U/\_trace} to the Makefile's \texttt{UPROGS}, so the
+program is included in the xv6 disk image.
+\end{enumerate}
+The generated stub loads \texttt{SYS\_trace} into register \texttt{a7},
+executes \texttt{ecall}, and returns. The first argument, the integer mask,
+is passed in \texttt{a0}. The program checks that the command and mask are
+present, then sets its own mask before replacing its program image:
+\begin{lstlisting}[language=C]
+if (trace(atoi(argv[1])) < 0) {
+  fprintf(2, "trace: failed\n");
+  exit(1);
+}
+exec(argv[2], argv + 2);
+fprintf(2, "trace: exec %s failed\n", argv[2]);
+exit(1);
+\end{lstlisting}
+Passing \texttt{argv + 2} makes the requested command its own
+\texttt{argv[0]}, with the rest of the command's arguments following it.
+Successful \texttt{exec} keeps the same process and does not return to the
+failure print.
+
+\subsection{Check 1: reaching an unimplemented syscall}
+I built and booted after these five changes, before adding the kernel
+handler. The actual output was:
+\lstinputlisting{output/checkpoint1.txt}
+This checkpoint demonstrates that the executable was on the image, the
+stub ran, and the kernel received syscall number 23. The failure was
+expected because the dispatch table did not yet contain that handler.
+The final submitted sources include the completed kernel side; this
+intermediate result is retained separately as evidence.
+
+\clearpage
+\section{Part 2: the kernel side}
+\subsection{Per-process mask and handler}
+I added \texttt{int trace\_mask;} after \texttt{name} in \texttt{struct proc}.
+The handler reads argument zero from the saved registers, stores the mask
+on the current process, and returns success:
+\begin{lstlisting}[language=C]
+uint64
+sys_trace(void)
+{
+  int mask;
+  argint(0, &mask);
+  myproc()->trace_mask = mask;
+  return 0;
+}
+\end{lstlisting}
+\texttt{argint} returns \texttt{void} in this version of xv6. The handler
+uses the requested integer as a bit mask, not as a syscall number.
+
+\subsection{Dispatch table and post-call printing}
+In \texttt{kernel/syscall.c}, I declared \texttt{sys\_trace} and added
+\texttt{[SYS\_trace] = sys\_trace} to the handler table. A matching
+\texttt{syscallnames} table names every supported call from 1 through 23,
+including \texttt{pause}, \texttt{sync}, and \texttt{trace}.
+The valid-call path now executes:
+\begin{lstlisting}[language=C]
+p->trapframe->a0 = syscalls[num]();
+if (((uint)p->trace_mask >> num) & 1U)
+  printk("%d: syscall %s -> %ld\n", p->pid,
+         syscallnames[num], p->trapframe->a0);
+\end{lstlisting}
+Printing after the handler reports its actual result in \texttt{a0}.
+The unsigned shift tests the selected bit; dispatch already checks that the
+syscall number is valid. \texttt{\%ld} shows failures as signed \texttt{-1}.
+Kernel \texttt{printk} is not a user write syscall and does not trace itself.
+
+\subsection{Initialization, inheritance, and exec}
+Allocation initializes the mask to zero; \texttt{freeproc} clears it on
+cleanup to avoid stale state in reused slots. This tree's fork implementation
+is named \texttt{kfork}. It copies the mask before making the child runnable:
+\begin{lstlisting}[language=C]
+safestrcpy(np->name, p->name, sizeof(p->name));
+np->trace_mask = p->trace_mask;
+\end{lstlisting}
+The child gets an independent integer mask. \texttt{exec} preserves this
+field, so no edit to \texttt{exec.c} is needed. The shell's zero mask still
+produces untraced children.
+
+\clearpage
+\subsection{Check 2: the required read trace}
+\lstinputlisting{output/read.txt}
+The observed values exactly match the handout:
+\[
+1023 + 965 + 453 = 2441\ \text{bytes}.
+\]
+The final zero indicates end-of-file, not an error. Mask 32 is
+\(2^5\), so it selects \texttt{SYS\_read = 5} and suppresses other call
+names. In particular, \texttt{open} and \texttt{close} still execute even
+though their trace lines are not selected.
+
+The read sizes also agree with the implementation of xv6's \texttt{grep}.
+It reads into the unused part of a 1024-byte buffer, reserving one byte;
+when no complete line consumes the retained suffix, the next request is
+smaller. The three positive returns therefore need not all be 1023.
+This run printed no matching README lines, only the selected read traces.
+
+\section{Part 3: playing with the mask}
+\subsection{All supported call bits}
+\lstinputlisting{output/all.txt}
+Mask 2147483647 has bits 0 through 30 set, so it includes all currently
+supported syscall numbers. The \texttt{trace} call itself is printed:
+its handler enables the mask before the dispatcher checks it. Successful
+\texttt{exec} returns 3 here because this implementation returns the new
+argument count to become \texttt{main}'s \texttt{argc}; it is not a file
+descriptor returned by exec. The subsequent open independently returns
+file descriptor 3.
+
+There is no \texttt{exit} line despite its bit being selected. The exit
+handler never returns to this post-handler print location. Similarly, the
+child's initial return from fork is prepared separately by \texttt{kfork};
+the post-dispatch fork line reports the calling parent's return value.
+The next subsection demonstrates descendant inheritance through the
+children's later calls to fork.
+
+\clearpage
+\subsection{Only fork: inherited tracing}
+The command \texttt{trace 2 usertests forkforkfork} selects bit 1. The
+following is an explicitly shortened excerpt; the complete transcript is
+retained in \texttt{output/fork.txt}.
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/fork-excerpt.txt}
+The trace contained calls from PIDs 5, 6, 7, and 8, not a fixed requirement
+of exactly three PIDs. The test runner and its descendants can all call
+fork, and copying \texttt{trace\_mask} in \texttt{kfork} lets each caller
+print its own selected calls. When allocation fails because the process
+table is full, the returned value is \texttt{-1}. The test handles this
+condition and finishes with \texttt{ALL TESTS PASSED}. The exact allocation
+order and PIDs depend on scheduling.
+
+\subsection{Only write: echo and the newline}
+\lstinputlisting{output/write.txt}
+\texttt{echo hi} calls \texttt{write} twice: once for the two bytes
+\texttt{hi}, then once for the newline. The first write has no newline, so
+its trace appears immediately after \texttt{hi}. The second write outputs
+a newline before its own trace line. Each trace line also ends with a
+newline, which explains the visible blank line. This output ordering is a
+consequence of tracing after each write returns, not an extra print from
+\texttt{echo}.
+
+\subsection{Selecting open and close together}
+The combined mask is
+\[
+(1 \ll 15)\mathbin{|}(1 \ll 21)
+= 32768 + 2097152 = \boxed{2129920}.
+\]
+\lstinputlisting{output/open-close.txt}
+Only the open and close lines were traced; the underlying reads still ran.
+The mask is a set of syscall-number bits, not a range of numbers.
+
+\clearpage
+\section{Handout questions and answers}
+\begin{enumerate}
+\Needspace{8\baselineskip}
+\item \textbf{Question:} In \texttt{trace 32 grep hello README} why do you see only read, and not open or close?
+\par\textbf{Answer:} 32 is \(1 \ll 5\), which enables only the bit for
+\texttt{SYS\_read}. Open is 15 and close is 21, so their bits are zero.
+Those calls still happen but the dispatcher's mask check does not print them.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} In forkforkfork, three different pids print lines. Which line of code from Part 2 makes that possible?
+\par\textbf{Answer:} \texttt{np->trace\_mask = p->trace\_mask;} in
+\texttt{kfork} copies the mask into every child. Descendants therefore trace
+their own selected calls. This run showed four caller PIDs (5, 6, 7, and 8),
+including the test runner; the inheritance mechanism is the same.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} In \texttt{trace 65536 echo hi} the trace line is printed between ``hi'' and the new line. Why? (How many times does echo call write?)
+\par\textbf{Answer:} Echo calls write twice: 2 bytes for \texttt{hi}, then
+1 byte for \texttt{\textbackslash n}. The kernel prints after each completed
+write. Consequently the first trace follows \texttt{hi} before echo sends
+its newline; the second follows the newline.
+
+\Needspace{8\baselineskip}
+\item \textbf{Question:} Which mask traces both open (15) and close (21), and nothing else?
+\par\textbf{Answer:} \((1 \ll 15) | (1 \ll 21) = 2129920\).
+The recorded combined-mask experiment produced only open and close lines.
+The handout's split ``15.'' line is interpreted as syscall number 15 for
+open, consistent with \texttt{kernel/syscall.h}.
+\end{enumerate}
+
+\section{Additional verification}
+I checked a zero mask, an ordinary command after tracing, missing command
+arguments, and a nonexistent executable. Mask zero produced no trace lines;
+a later untraced command also remained quiet. The missing executable
+returned \texttt{-1} from exec. With all bits enabled, xv6's character-wise
+\texttt{fprintf} interleaves each error-message character with a write trace;
+the verifier removes the trace records before checking the full message.
+This was an output-parsing adjustment, not a kernel failure.
+
+\clearpage
+\subsection{A focused mask-lifecycle regression}
+The additional \texttt{tracetest} enables getpid tracing, forks, and has
+the child disable its copy of the mask. The parent waits and calls getpid
+again, then disables its own mask. The observed output was:
+\lstinputlisting{output/lifecycle.txt}
+There are exactly three getpid trace records: the parent before fork, the
+child before disabling, and the parent after the child disables. The
+untraced getpid calls after each process disables its mask do not add
+records. This demonstrates both inheritance and independent per-process
+mask changes. The parent also checks the child's exit status.
+
+\subsection{Existing xv6 tests and source consistency}
+I ran \texttt{usertests -q}, which executed \textbf{68} tests and finished
+successfully. This is xv6's quick suite, not its slow suite. Some memory
+protection tests deliberately cause user traps; their diagnostic lines are
+expected, and the tests still report success. There were no kernel panics
+and no leaked syscall traces in the untraced suite.
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{output/regression-excerpt.txt}
+The verifier checks the required traces, masks, error cases, inheritance,
+and suite result, and compares all ten submitted source copies with the
+tested tree. Raw evidence is under \path{lab10/report_files/output/}.
+
+\section{Conclusion}
+Adding trace required both sides of the syscall boundary: a number,
+declaration and generated stub in user space, then process state, a handler,
+and dispatch-table integration in the kernel. Printing after the handler
+makes the returned result visible. Per-process masks persist across exec,
+are copied across fork, and can then be changed independently. All required
+mask experiments passed, the read byte counts matched the handout exactly,
+and the existing xv6 quick suite still passed after the kernel changes.
+\end{document}

@@ -1,0 +1,4 @@
+trace 65536 echo hi
+hi67: syscall write -> 2
+
+67: syscall write -> 1

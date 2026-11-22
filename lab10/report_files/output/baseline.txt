@@ -1,0 +1,2 @@
+echo baseline-boot-ok
+baseline-boot-ok

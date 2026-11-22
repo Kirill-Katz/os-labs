@@ -1,0 +1,7 @@
+tracetest
+tracetest: parent 73
+73: syscall getpid -> 73
+74: syscall getpid -> 74
+tracetest: child 74 disabled
+73: syscall getpid -> 73
+tracetest: PASS

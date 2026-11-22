@@ -1,0 +1,11 @@
+trace 2 usertests forkforkfork
+usertests starting
+test forkforkfork: 5: syscall fork -> 6
+6: syscall fork -> 7
+7: syscall fork -> 8
+8: syscall fork -> 9
+... (middle fork lines omitted; full output in fork.txt) ...
+8: syscall fork -> -1
+7: syscall fork -> -1
+OK
+ALL TESTS PASSED
